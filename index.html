@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LAYER: can I mix these?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<meta name="description" content="LAYER - tell it what's on your shelf and get a morning and evening skincare routine in the right order." />
+<meta name="theme-color" content="#C0C2BE" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="favicon-48.png" sizes="48x48" type="image/png" />
+<link rel="icon" href="icon-192.png" sizes="192x192" type="image/png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="LAYER" />
+<style>
+  :root{
+    --paper:#C0C2BE; --surface:#D6D8D4; --card:#EAEBE8;
+    --espresso:#25272B; --espresso-soft:#54575B;
+    --taupe:#71746F; --line:#C6C8C3;
+    --lime:#C7E63F; --lime-deep:#8FAF27; --lime-tint:#E7F0C6;
+    --clay:#C0402E; --clay-tint:#EFDCD8; --clay-ink:#8A2E1E;
+    --cream:#EAEBE8;
+    --disp:'Archivo',system-ui,-apple-system,sans-serif;
+    --sans:'Instrument Sans',system-ui,-apple-system,sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+  body{ background:var(--paper); color:var(--espresso); font-family:var(--sans);
+    line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .wrap{ max-width:1080px; margin:0 auto; padding:0 22px 64px; }
+
+  .bar{ display:flex; align-items:baseline; justify-content:space-between; padding:22px 0 0; }
+  .mark{ font-family:var(--disp); font-weight:700; font-size:20px; letter-spacing:0.22em; }
+  .bar .tag{ font-size:12.5px; color:var(--taupe); }
+
+  .hero{ padding:52px 0 42px; }
+  .hero h1{ font-family:var(--disp); font-weight:600; font-size:clamp(44px,8vw,84px);
+    line-height:0.94; letter-spacing:-0.02em; margin:0; max-width:14ch; }
+  .swipe{ height:15px; width:132px; background:var(--lime);
+    border-radius:40% 60% 55% 45%/60% 45% 55% 40%; margin:26px 0 24px; transform:rotate(-1.5deg); }
+  .lede{ font-size:clamp(15px,2vw,17px); color:var(--espresso-soft); max-width:46ch; margin:0; line-height:1.55; }
+
+  .grid{ display:grid; grid-template-columns:360px 1fr; gap:26px; align-items:start; }
+  @media(max-width:840px){ .grid{ grid-template-columns:1fr; } }
+
+  .picker{ background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:22px; }
+  .picker h2{ font-family:var(--disp); font-weight:600; font-size:17px; margin:0 0 4px; }
+  .picker .hint{ font-size:13px; color:var(--taupe); margin:0 0 18px; }
+  .cat{ font-family:var(--disp); font-weight:500; font-size:13px; color:var(--taupe); margin:18px 2px 9px; }
+  .cat.first{ margin-top:0; }
+  .pills{ display:flex; flex-wrap:wrap; gap:8px; }
+  .pill{ border:1px solid var(--line); background:#fff; color:var(--espresso); border-radius:999px;
+    padding:8px 15px; font-size:14px; font-family:var(--sans); cursor:pointer;
+    transition:border-color .14s ease, background .14s ease, transform .06s ease; }
+  .pill:hover{ border-color:var(--espresso-soft); }
+  .pill:active{ transform:scale(0.96); }
+  .pill:focus-visible{ outline:2px solid var(--espresso); outline-offset:2px; }
+  .pill[data-on="true"]{ background:var(--lime); color:var(--espresso); border-color:var(--lime-deep); font-weight:500; }
+  .clear{ margin-top:20px; display:inline-flex; align-items:center; gap:7px; background:none; border:none;
+    color:var(--taupe); font-size:13px; font-family:var(--sans); cursor:pointer; padding:4px 0; }
+  .clear:hover{ color:var(--espresso); }
+  .clear svg{ width:14px; height:14px; }
+
+  /* view toggle */
+  .toggle{ display:inline-flex; background:var(--surface); border:1px solid var(--line);
+    border-radius:999px; padding:4px; margin-bottom:22px; }
+  .toggle button{ border:none; background:none; font-family:var(--disp); font-weight:500; font-size:14px;
+    color:var(--taupe); padding:8px 20px; border-radius:999px; cursor:pointer; transition:all .14s ease; }
+  .toggle button[data-on="true"]{ background:var(--espresso); color:var(--cream); }
+
+  .empty{ border:1px dashed var(--line); border-radius:20px; padding:56px 30px; text-align:center; }
+  .empty .dot{ width:46px; height:18px; background:var(--lime);
+    border-radius:40% 60% 55% 45%/60% 45% 55% 40%; margin:0 auto 20px; transform:rotate(-2deg); }
+  .empty h3{ font-family:var(--disp); font-weight:600; font-size:23px; margin:0 0 8px; }
+  .empty p{ color:var(--taupe); margin:0; font-size:14.5px; }
+
+  .notes{ display:flex; flex-direction:column; gap:11px; margin-bottom:22px; }
+  .note{ border-radius:15px; padding:15px 17px; font-size:14px; display:flex; gap:12px; align-items:flex-start; }
+  .note svg{ width:18px; height:18px; flex-shrink:0; margin-top:1px; }
+  .note b{ font-weight:600; font-family:var(--disp); font-size:14.5px; display:block; }
+  .note p{ margin:4px 0 0; line-height:1.5; }
+  .note.warn{ background:var(--clay-tint); color:var(--clay-ink); }
+  .note.ok{ background:var(--lime-tint); color:#39461a; }
+  .note.info{ background:#D9DBD6; color:#33352F; }
+  .src{ display:block; margin-top:7px; font-size:11.5px; font-style:italic; opacity:0.72; }
+
+  .cards{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media(max-width:620px){ .cards{ grid-template-columns:1fr; } }
+  .card{ border-radius:20px; padding:22px; }
+  .card.am{ background:var(--card); border:1px solid var(--line); color:var(--espresso); }
+  .card.pm{ background:var(--espresso); color:var(--cream); }
+  .chead{ display:flex; align-items:center; gap:10px; }
+  .chead svg{ width:20px; height:20px; }
+  .chead h2{ font-family:var(--disp); font-weight:600; font-size:22px; margin:0; }
+  .count{ margin-left:auto; font-size:12.5px; opacity:0.65; }
+  .steps{ list-style:none; margin:16px 0 0; padding:0; }
+  .step{ display:flex; align-items:baseline; gap:14px; padding:11px 0; }
+  .card.am .step + .step{ border-top:1px solid var(--line); }
+  .card.pm .step + .step{ border-top:1px solid rgba(234,235,232,0.14); }
+  .num{ font-family:var(--disp); font-weight:500; font-size:17px; width:24px; flex-shrink:0; }
+  .card.am .num{ color:var(--lime-deep); }
+  .card.pm .num{ color:var(--lime); }
+  .step .nm{ font-size:15px; font-weight:500; }
+  .step .nt{ font-size:12.5px; display:block; margin-top:1px; }
+  .card.am .nt{ color:var(--taupe); }
+  .card.pm .nt{ color:#A6A9A4; }
+  .flag{ font-size:11px; font-weight:600; margin-left:7px; }
+  .card.am .flag{ color:var(--clay); }
+  .card.pm .flag{ color:var(--lime); }
+
+  /* weekly */
+  .weeknote{ font-size:14px; color:var(--espresso-soft); margin:0 0 20px; max-width:56ch; line-height:1.55; }
+  .weeknote b{ font-weight:600; }
+  .basecard{ background:var(--card); border:1px solid var(--line); border-radius:20px; padding:20px 22px; margin-bottom:16px; }
+  .basecard.night{ background:var(--espresso); color:var(--cream); border:none; }
+  .basecard .chead{ margin-bottom:12px; }
+  .baseflow{ font-size:14px; line-height:1.7; }
+  .baseflow .sep{ opacity:0.4; margin:0 7px; }
+  .week{ display:flex; flex-direction:column; gap:0; border:1px solid var(--line);
+    border-radius:20px; overflow:hidden; background:var(--card); }
+  .day{ display:flex; align-items:center; gap:16px; padding:15px 20px; }
+  .day + .day{ border-top:1px solid var(--line); }
+  .day .dname{ font-family:var(--disp); font-weight:600; font-size:15px; width:52px; flex-shrink:0; }
+  .day .focus{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .chip{ background:var(--lime); color:var(--espresso); font-weight:600; font-family:var(--disp);
+    font-size:13.5px; padding:5px 13px; border-radius:999px; }
+  .rec{ color:var(--taupe); font-size:14px; font-style:italic; }
+  .subnote{ font-size:12.5px; color:var(--taupe); margin-left:auto; }
+  @media(max-width:520px){ .subnote{ display:none; } }
+
+  .disc{ margin-top:26px; font-size:12px; color:var(--taupe); max-width:64ch; line-height:1.5; }
+  @media(prefers-reduced-motion:reduce){ .pill,.toggle button{ transition:none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <div class="mark">LAYER</div>
+    <div class="tag">Simplifying layering</div>
+  </div>
+
+  <header class="hero">
+    <h1>Can I mix these?</h1>
+    <div class="swipe"></div>
+    <p class="lede">Tell me what's on your shelf. You'll get a morning and evening routine in the right order, an automatic weekly plan, and a heads-up on anything that shouldn't share a step.</p>
+  </header>
+
+  <div class="grid">
+    <div class="picker" id="picker"></div>
+    <div id="results"></div>
+  </div>
+</div>
+
+<script>
+// ---- Icons (inline SVG) ----
+const IC = {
+  sun:  '<svg viewBox="0 0 24 24" fill="none" stroke="var(--lime-deep)" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  moon: '<svg viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+  warn: '<svg viewBox="0 0 24 24" fill="none" stroke="var(--clay)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="var(--lime-deep)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  reset:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
+  info: '<svg viewBox="0 0 24 24" fill="none" stroke="#5A5D56" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/></svg>'
+};
+
+// ---- Data ----
+const INGREDIENTS = [
+  { id:"oilcleanser", name:"Oil cleanser / balm",     note:"First step of a double cleanse",  order:1,  times:["PM"],      cat:"Cleanse" },
+  { id:"cleanser",    name:"Cleanser",                note:"Your main wash",                  order:2,  times:["AM","PM"], cat:"Cleanse" },
+  { id:"essence",     name:"Toner / essence",         note:"Preps and hydrates",              order:3,  times:["AM","PM"], cat:"Hydrate" },
+  { id:"ha",          name:"Hyaluronic acid",         note:"Pure hydration",                  order:5,  times:["AM","PM"], cat:"Hydrate" },
+  { id:"snail",       name:"Snail mucin",             note:"Hydrates and repairs",            order:5,  times:["AM","PM"], cat:"Hydrate" },
+  { id:"vitc",        name:"Vitamin C",               note:"Best in daylight",                order:4,  times:["AM"],      cat:"Treat" },
+  { id:"niacinamide", name:"Niacinamide",             note:"Easygoing, plays with most",      order:5,  times:["AM","PM"], cat:"Treat" },
+  { id:"peptides",    name:"Peptide serum",           note:"Firming support",                 order:5,  times:["AM","PM"], cat:"Treat" },
+  { id:"arbutin",     name:"Alpha arbutin",           note:"Targets dark spots",              order:5,  times:["AM","PM"], cat:"Treat" },
+  { id:"tranexamic",  name:"Tranexamic acid",         note:"Evens out pigmentation",          order:5,  times:["AM","PM"], cat:"Treat" },
+  { id:"cica",        name:"Centella / Cica",         note:"Calms and soothes",               order:5,  times:["AM","PM"], cat:"Treat" },
+  { id:"azelaic",     name:"Azelaic acid",            note:"Calms redness",                   order:6,  times:["AM","PM"], cat:"Treat" },
+  { id:"bp",          name:"Benzoyl peroxide",        note:"Spot & acne treatment",           order:6,  times:["AM","PM"], cat:"Treat" },
+  { id:"bakuchiol",   name:"Bakuchiol",               note:"Gentle retinol alternative",      order:7,  times:["AM","PM"], cat:"Treat" },
+  { id:"retinol",     name:"Retinol / retinoid",      note:"Night only",                      order:7,  times:["PM"],      cat:"Treat" },
+  { id:"retinal",     name:"Retinal (retinaldehyde)", note:"Stronger, faster retinoid",       order:7,  times:["PM"],      cat:"Treat" },
+  { id:"adapalene",   name:"Adapalene",               note:"Stable retinoid, pairs with BP",  order:7,  times:["AM","PM"], cat:"Treat" },
+  { id:"pha",         name:"PHA (gentle acid)",       note:"Mild exfoliation",                order:6,  times:["AM","PM"], cat:"Exfoliate" },
+  { id:"bha",         name:"BHA / salicylic acid",    note:"Unclogs pores",                   order:6,  times:["AM","PM"], cat:"Exfoliate" },
+  { id:"mandelic",    name:"Mandelic acid",           note:"Gentle AHA",                      order:7,  times:["PM"],      cat:"Exfoliate" },
+  { id:"aha",         name:"AHA (glycolic / lactic)", note:"Night only",                      order:7,  times:["PM"],      cat:"Exfoliate" },
+  { id:"eye",         name:"Eye cream",               note:"For the delicate area",           order:8,  times:["AM","PM"], cat:"Seal" },
+  { id:"moisturizer", name:"Moisturizer",             note:"Locks it all in",                 order:9,  times:["AM","PM"], cat:"Seal" },
+  { id:"squalane",    name:"Squalane",                note:"Lightweight oil",                 order:10, times:["AM","PM"], cat:"Seal" },
+  { id:"oil",         name:"Face oil",                note:"The final layer",                 order:10, times:["AM","PM"], cat:"Seal" },
+  { id:"spf",         name:"Sunscreen (SPF)",         note:"Every morning, always last",      order:11, times:["AM"],      cat:"Protect" }
+];
+const MAP = Object.fromEntries(INGREDIENTS.map(i => [i.id, i]));
+const CATS = ["Cleanse","Hydrate","Treat","Exfoliate","Seal","Protect"];
+const ROTATION = ["retinol","retinal","adapalene","aha","mandelic","bha","bp"]; // strong actives spread across the week
+const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+const RETINOID_STRONG = ["retinol","retinal"];
+const RETINOIDS = ["retinol","retinal","adapalene"];
+const EXFOLIANTS = ["aha","mandelic","bha"];
+
+function buildConflicts(){
+  const C = [];
+  const add = (a,b,why,fix,src) => C.push({a,b,why,fix,src});
+  RETINOIDS.forEach(r => EXFOLIANTS.forEach(e =>
+    add(r, e,
+      "Two renewing actives in one night mainly adds up as irritation, not a chemical clash.",
+      "Alternate nights, or keep them on separate days.",
+      "Cumulative irritation. The acids-deactivate-retinol idea is a myth.")));
+  RETINOID_STRONG.forEach(r =>
+    add(r, "bp",
+      "Real chemistry here: benzoyl peroxide degrades this kind of retinoid, and the pair is very drying.",
+      "Benzoyl peroxide in the morning, retinoid at night.",
+      "Martin et al., Br. J. Dermatol. 1998."));
+  for(let i=0;i<EXFOLIANTS.length;i++) for(let j=i+1;j<EXFOLIANTS.length;j++)
+    add(EXFOLIANTS[i], EXFOLIANTS[j],
+      "Doubling up on exfoliating acids can wear down the barrier.",
+      "Use one per night, or alternate.",
+      "Cumulative exfoliation risk.");
+  EXFOLIANTS.forEach(e =>
+    add(e, "bp",
+      "An acid plus benzoyl peroxide is a heavy load of active at once.",
+      "Keep them on separate days.",
+      "Cumulative irritation and dryness."));
+  for(let i=0;i<RETINOIDS.length;i++) for(let j=i+1;j<RETINOIDS.length;j++)
+    add(RETINOIDS[i], RETINOIDS[j],
+      "Two retinoids at once is redundant and more likely to irritate than to help.",
+      "Pick one and stick with it.",
+      "No added benefit from stacking retinoids.");
+  return C;
+}
+const CONFLICTS = buildConflicts();
+
+const GOOD = [
+  { a:"vitc", b:"niacinamide",
+    head:"Vitamin C + niacinamide play fine together.",
+    body:"The old \u201cthey cancel each other out\u201d rule has been debunked. Layer away.",
+    src:"Myth traces to a 1960s study on pure niacin under heat, not modern serums." },
+  { a:"adapalene", b:"bp",
+    head:"Adapalene + benzoyl peroxide are stable together.",
+    body:"That is exactly why they are sold as a single product. No need to separate them.",
+    src:"Adapalene resists the degradation that hits other retinoids (Br. J. Dermatol. 1998)." }
+];
+
+// ---- State ----
+const sel = new Set();
+let view = "daily";
+
+// ---- Local persistence (no account, stays on this device) ----
+const STORE_KEY = "layer.shelf.v1";
+function persist(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify({ sel:[...sel], view })); }catch(e){}
+}
+function restore(){
+  try{
+    const data = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
+    if(Array.isArray(data.sel)) data.sel.forEach(id => { if(MAP[id]) sel.add(id); });
+    if(data.view === "daily" || data.view === "weekly") view = data.view;
+  }catch(e){}
+}
+
+// ---- Logic ----
+const byOrder = (a,b) => a.order - b.order;
+const dayList = (t) => INGREDIENTS.filter(i => sel.has(i.id) && i.times.includes(t)).sort(byOrder);
+const baseList = (t) => INGREDIENTS.filter(i => sel.has(i.id) && i.times.includes(t) && !ROTATION.includes(i.id)).sort(byOrder);
+const rotatingActives = () => INGREDIENTS.filter(i => sel.has(i.id) && ROTATION.includes(i.id)).sort(byOrder);
+
+function computeNotes(){
+  const warn = [];
+  CONFLICTS.forEach(c => {
+    if(!sel.has(c.a) || !sel.has(c.b)) return;
+    const shared = MAP[c.a].times.filter(t => MAP[c.b].times.includes(t));
+    if(shared.length) warn.push(Object.assign({}, c, { where: shared }));
+  });
+  const good = GOOD.filter(g => sel.has(g.a) && sel.has(g.b));
+  const timing = sel.has("vitc") && ["retinol","retinal","aha","mandelic","bha"].some(id => sel.has(id));
+  return { warn, good, timing };
+}
+
+function weekSchedule(){
+  const actives = rotatingActives().map(i => i.id);
+  const week = Array(7).fill(null);
+  if(actives.length === 1){
+    [0,2,4].forEach(n => week[n] = actives[0]);        // one active → Mon/Wed/Fri, rest recover
+  } else if(actives.length >= 2){
+    for(let i=0;i<7;i++) week[i] = actives[i % actives.length]; // spread evenly, never colliding
+  }
+  return week;
+}
+
+// ---- Render ----
+function renderPicker(){
+  const p = document.getElementById("picker");
+  let html = '<h2>Your shelf</h2><p class="hint">Tap everything you use.</p>';
+  CATS.forEach((cat, ci) => {
+    html += '<div class="cat'+(ci===0?' first':'')+'">'+cat+'</div><div class="pills">';
+    INGREDIENTS.filter(i => i.cat === cat).forEach(i => {
+      html += '<button class="pill" data-id="'+i.id+'" data-on="'+sel.has(i.id)+'">'+i.name+'</button>';
+    });
+    html += '</div>';
+  });
+  html += '<button class="clear" id="clear" style="display:'+(sel.size?'inline-flex':'none')+'">'+IC.reset+' Clear shelf</button>';
+  p.innerHTML = html;
+  p.querySelectorAll(".pill").forEach(b => b.onclick = () => {
+    const id = b.dataset.id;
+    sel.has(id) ? sel.delete(id) : sel.add(id);
+    render();
+  });
+  const c = document.getElementById("clear");
+  if(c) c.onclick = () => { sel.clear(); render(); };
+}
+
+function stepLI(it, idx, flagged){
+  return '<li class="step"><span class="num">'+(idx+1)+'</span><span>'+
+    '<span class="nm">'+it.name+'</span>'+
+    (flagged.has(it.id) ? '<span class="flag">see note</span>' : '')+
+    '<span class="nt">'+it.note+'</span></span></li>';
+}
+
+function renderDaily(){
+  const { warn, good, timing } = computeNotes();
+  const flagged = new Set();
+  warn.forEach(w => { flagged.add(w.a); flagged.add(w.b); });
+  const label = a => a.map(t => t==="AM"?"morning":"evening").join(" & ");
+
+  let html = "";
+  if(warn.length || good.length || timing){
+    html += '<div class="notes">';
+    warn.forEach(w => {
+      html += '<div class="note warn">'+IC.warn+'<div><b>'+MAP[w.a].name+' + '+MAP[w.b].name+
+        ': keep them out of the same '+label(w.where)+' routine.</b><p>'+w.why+' '+w.fix+'</p>'+
+        '<span class="src">'+w.src+'</span></div></div>';
+    });
+    if(timing){
+      html += '<div class="note info">'+IC.info+'<div><b>A note on timing, not a clash.</b>'+
+        '<p>Your vitamin C sits in the morning and your retinol or acids at night. That split is about comfort and getting the most from each. They do not cancel each other out.</p>'+
+        '<span class="src">Convention for tolerability and stability, not a chemical conflict.</span></div></div>';
+    }
+    good.forEach(g => {
+      html += '<div class="note ok">'+IC.check+'<div><b>'+g.head+'</b><p>'+g.body+'</p>'+
+        '<span class="src">'+g.src+'</span></div></div>';
+    });
+    html += '</div>';
+  }
+
+  const am = dayList("AM"), pm = dayList("PM");
+  html += '<div class="cards">';
+  html += '<div class="card am"><div class="chead">'+IC.sun+'<h2>Morning</h2><span class="count">'+am.length+' step'+(am.length!==1?'s':'')+'</span></div><ol class="steps">'+
+    am.map((it,i)=>stepLI(it,i,flagged)).join("")+'</ol></div>';
+  html += '<div class="card pm"><div class="chead">'+IC.moon+'<h2>Evening</h2><span class="count">'+pm.length+' step'+(pm.length!==1?'s':'')+'</span></div><ol class="steps">'+
+    pm.map((it,i)=>stepLI(it,i,flagged)).join("")+'</ol></div>';
+  html += '</div>';
+  return html;
+}
+
+function renderWeekly(){
+  const amBase = baseList("AM");
+  const pmBase = baseList("PM");
+  const actives = rotatingActives();
+  const week = weekSchedule();
+  const flow = arr => arr.map(i => '<span class="nm">'+i.name+'</span>').join('<span class="sep">·</span>');
+
+  let html = "";
+
+  if(actives.length >= 1){
+    html += '<p class="weeknote">You picked <b>'+actives.length+' strong active'+(actives.length>1?'s':'')+
+      '</b>. Here they\'re spread across the week so they never land on the same night. This is the safe way to get the benefit without wrecking your barrier.</p>';
+  } else {
+    html += '<p class="weeknote">Nothing here needs rotating, so your routine stays the same every day. Add a retinol or an exfoliating acid and the week fills itself in.</p>';
+  }
+
+  // Every morning
+  html += '<div class="basecard"><div class="chead">'+IC.sun+'<h2 style="font-family:var(--disp);font-weight:600;font-size:19px;margin:0;">Every morning</h2></div>'+
+    (amBase.length ? '<div class="baseflow">'+flow(amBase)+'</div>' : '<div class="baseflow" style="color:var(--taupe)">Add your morning steps on the left.</div>')+'</div>';
+
+  // Nightly base stated once
+  if(pmBase.length){
+    html += '<div class="basecard night"><div class="chead">'+IC.moon+'<h2 style="font-family:var(--disp);font-weight:600;font-size:19px;margin:0;color:var(--cream)">Every evening base</h2></div>'+
+      '<div class="baseflow">'+flow(pmBase)+'</div></div>';
+  }
+
+  // Week of nights (only meaningful when there's something to rotate)
+  if(actives.length >= 1){
+    html += '<div class="week">';
+    week.forEach((id, i) => {
+      const focus = id
+        ? '<span class="chip">'+MAP[id].name+'</span>'+(pmBase.length?'<span class="subnote">+ your nightly base</span>':'')
+        : '<span class="rec">Barrier recovery night</span>'+(pmBase.length?'<span class="subnote">just your nightly base</span>':'');
+      html += '<div class="day"><span class="dname">'+DAYS[i]+'</span><span class="focus">'+focus+'</span></div>';
+    });
+    html += '</div>';
+  }
+  return html;
+}
+
+function render(){
+  persist();
+  renderPicker();
+  const r = document.getElementById("results");
+  if(sel.size === 0){
+    r.innerHTML = '<div class="empty"><div class="dot"></div><h3>Your shelf is empty</h3>'+
+      '<p>Pick a few products on the left and your routine builds itself.</p></div>'+
+      '<p class="disc">General layering guidance, not medical advice. Introduce new actives one at a time, patch test, and ease in slowly.</p>';
+    return;
+  }
+  let html = '<div class="toggle">'+
+    '<button data-v="daily" data-on="'+(view==="daily")+'">Daily</button>'+
+    '<button data-v="weekly" data-on="'+(view==="weekly")+'">Weekly plan</button></div>';
+  html += (view === "daily") ? renderDaily() : renderWeekly();
+  html += '<p class="disc">General layering guidance, not medical advice. Introduce new actives one at a time, patch test, and ease in slowly.</p>';
+  r.innerHTML = html;
+  r.querySelectorAll(".toggle button").forEach(b => b.onclick = () => { view = b.dataset.v; render(); });
+}
+
+restore();
+render();
+
+// ---- Make it installable / work offline ----
+if("serviceWorker" in navigator){
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "LAYER",
+  "short_name": "LAYER",
+  "description": "Tell it what's on your shelf and get a morning and evening skincare routine in the right order.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#C0C2BE",
+  "theme_color": "#C0C2BE",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
