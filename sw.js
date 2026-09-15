@@ -1,5 +1,5 @@
 // LAYER service worker - offline app shell + runtime caching for fonts
-const CACHE = "layer-v2";
+const CACHE = "layer-v3";
 const ASSETS = [
   "./",
   "./index.html",
@@ -9,6 +9,8 @@ const ASSETS = [
   "./icon-maskable-512.png",
   "./apple-touch-icon.png"
 ];
+// Pages get the network first (so updates always show up); everything else is cache-first.
+const NETWORK_FIRST = ["./", "./index.html"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(
@@ -24,9 +26,30 @@ self.addEventListener("activate", (e) => {
   );
 });
 
+function isNetworkFirst(req){
+  if (req.mode === "navigate") return true;
+  const url = new URL(req.url);
+  return NETWORK_FIRST.some((p) => url.pathname.endsWith(p.replace("./", "/")));
+}
+
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;
+
+  if (isNetworkFirst(req)) {
+    // Always try the live page first, so updates show up immediately when online.
+    e.respondWith(
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+          return res;
+        })
+        .catch(() => caches.match(req).then((hit) => hit || caches.match("./index.html")))
+    );
+    return;
+  }
+
   e.respondWith(
     caches.match(req).then((hit) => {
       if (hit) return hit;
