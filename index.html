@@ -135,6 +135,45 @@
 
   .disc{ margin-top:26px; font-size:12px; color:var(--taupe); max-width:64ch; line-height:1.5; }
   @media(prefers-reduced-motion:reduce){ .pill,.toggle button{ transition:none; } }
+
+  /* journal */
+  .jform{ background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:22px; margin-bottom:22px; }
+  .jrow{ margin-bottom:16px; }
+  .jrow:last-of-type{ margin-bottom:14px; }
+  .jlabel{ display:block; font-family:var(--disp); font-weight:500; font-size:13px; color:var(--taupe); margin-bottom:8px; }
+  .jopt{ font-weight:400; opacity:0.75; }
+  .jdateinput{ font-family:var(--sans); font-size:14px; border:1px solid var(--line); border-radius:10px;
+    padding:9px 12px; background:#fff; color:var(--espresso); }
+  .jchips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .jchip{ border:1px solid var(--line); background:#fff; color:var(--espresso); border-radius:999px; padding:8px 15px;
+    font-size:14px; font-family:var(--sans); cursor:pointer; transition:border-color .14s ease, background .14s ease; }
+  .jchip:hover{ border-color:var(--jc); }
+  .jchip[data-on="true"]{ background:var(--jt); border-color:var(--jc); color:var(--jc); font-weight:600; }
+  .jnoteinput{ width:100%; min-height:62px; resize:vertical; font-family:var(--sans); font-size:14px; color:var(--espresso);
+    border:1px solid var(--line); border-radius:12px; padding:11px 13px; background:#fff; }
+  .jnoteinput:focus, .jdateinput:focus{ outline:2px solid var(--espresso); outline-offset:1px; }
+  .jsave{ font-family:var(--disp); font-weight:600; font-size:14px; background:var(--lime); color:var(--espresso);
+    border:1px solid var(--lime-deep); border-radius:999px; padding:10px 22px; cursor:pointer; }
+  .jsave:disabled{ opacity:0.45; cursor:not-allowed; }
+  .jsave:not(:disabled):hover{ background:var(--lime-deep); }
+  .jhint{ font-size:12px; color:var(--taupe); margin:12px 0 0; }
+
+  .journal-list{ display:flex; flex-direction:column; gap:12px; }
+  .jentry{ display:flex; gap:16px; background:var(--card); border:1px solid var(--line); border-left:4px solid var(--jc);
+    border-radius:16px; padding:16px 18px; }
+  .jdate{ font-family:var(--disp); font-weight:600; font-size:14px; color:var(--espresso-soft); width:48px; flex-shrink:0; padding-top:1px; }
+  .jbody{ flex:1; min-width:0; }
+  .jtop{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .jstatus{ font-family:var(--disp); font-weight:600; font-size:14px; color:var(--jc); }
+  .jdel{ background:none; border:none; color:var(--taupe); cursor:pointer; padding:8px; margin:-8px -8px 0 0; display:flex; flex-shrink:0; border-radius:8px; }
+  .jdel:hover{ color:var(--clay); }
+  .jdel svg{ width:15px; height:15px; }
+  .jnote{ font-size:13.5px; color:var(--espresso-soft); margin:6px 0 0; line-height:1.5; }
+  .jchange{ font-size:12.5px; margin:8px 0 0; font-family:var(--sans); }
+  .jplus{ color:var(--lime-deep); font-weight:600; }
+  .jminus{ color:var(--clay); font-weight:600; margin-left:10px; }
+  .jproducts{ font-size:12px; color:var(--taupe); margin-top:8px; }
+  .jproducts.jnone{ font-style:italic; opacity:0.8; }
 </style>
 </head>
 <body>
@@ -164,7 +203,8 @@ const IC = {
   warn: '<svg viewBox="0 0 24 24" fill="none" stroke="var(--clay)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>',
   check:'<svg viewBox="0 0 24 24" fill="none" stroke="var(--lime-deep)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
   reset:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
-  info: '<svg viewBox="0 0 24 24" fill="none" stroke="#5A5D56" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/></svg>'
+  info: '<svg viewBox="0 0 24 24" fill="none" stroke="#5A5D56" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M10 11v6M14 11v6"/></svg>'
 };
 
 // ---- Data ----
@@ -251,17 +291,65 @@ const GOOD = [
 // ---- State ----
 const sel = new Set();
 let view = "daily";
+let journal = []; // { id, ts, date, status, note, products:[ids] }
+
+// ---- Journal setup ----
+const STATUS = {
+  clear:     { label:"Clear",        color:"var(--lime-deep)", tint:"var(--lime-tint)" },
+  meh:       { label:"A little off", color:"var(--taupe)",     tint:"var(--surface)" },
+  breakout:  { label:"Breakout",     color:"var(--clay)",      tint:"var(--clay-tint)" },
+  irritated: { label:"Irritated",    color:"var(--clay-ink)",  tint:"var(--clay-tint)" }
+};
+const STATUS_ORDER = ["clear","meh","breakout","irritated"];
+
+function todayStr(){
+  const d = new Date();
+  const p = n => String(n).padStart(2,"0");
+  return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());
+}
+function fmtDate(iso){
+  const [y,m,d] = iso.split("-").map(Number);
+  return new Date(y, m-1, d).toLocaleDateString("en-US", { month:"short", day:"numeric" });
+}
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+let jDate = todayStr();
+let jStatus = null;
+let jNote = "";
+
+function addJournalEntry(){
+  if(!jStatus) return;
+  journal.push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,7),
+    ts: Date.now(),
+    date: jDate || todayStr(),
+    status: jStatus,
+    note: jNote.trim(),
+    products: [...sel]
+  });
+  jStatus = null; jNote = ""; jDate = todayStr();
+  render();
+}
+function deleteJournalEntry(id){
+  journal = journal.filter(e => e.id !== id);
+  render();
+}
 
 // ---- Local persistence (no account, stays on this device) ----
 const STORE_KEY = "layer.shelf.v1";
 function persist(){
-  try{ localStorage.setItem(STORE_KEY, JSON.stringify({ sel:[...sel], view })); }catch(e){}
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify({ sel:[...sel], view, journal })); }catch(e){}
 }
 function restore(){
   try{
     const data = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
     if(Array.isArray(data.sel)) data.sel.forEach(id => { if(MAP[id]) sel.add(id); });
-    if(data.view === "daily" || data.view === "weekly") view = data.view;
+    if(data.view === "daily" || data.view === "weekly" || data.view === "journal") view = data.view;
+    if(Array.isArray(data.journal)){
+      journal = data.journal.filter(e => e && e.id && e.date && STATUS_ORDER.includes(e.status) && Array.isArray(e.products));
+    }
   }catch(e){}
 }
 
@@ -399,23 +487,100 @@ function renderWeekly(){
   return html;
 }
 
+function journalForm(){
+  const pills = STATUS_ORDER.map(k => {
+    const s = STATUS[k];
+    return '<button type="button" class="jchip" data-status="'+k+'" data-on="'+(jStatus===k)+'" style="--jc:'+s.color+';--jt:'+s.tint+'">'+s.label+'</button>';
+  }).join("");
+  const shelfNow = [...sel].map(id => MAP[id].name).join(", ");
+  return '<div class="jform">'+
+    '<div class="jrow"><label class="jlabel">Date</label>'+
+      '<input type="date" id="jdate" class="jdateinput" value="'+jDate+'" max="'+todayStr()+'" /></div>'+
+    '<div class="jrow"><label class="jlabel">How did your skin look?</label>'+
+      '<div class="jchips">'+pills+'</div></div>'+
+    '<div class="jrow"><label class="jlabel">Notes <span class="jopt">(optional)</span></label>'+
+      '<textarea id="jnoteinput" class="jnoteinput" placeholder="Where, how bad, anything else going on...">'+escapeHtml(jNote)+'</textarea></div>'+
+    '<button class="jsave" id="jsave"'+(jStatus ? '' : ' disabled')+'>Save entry</button>'+
+    '<p class="jhint">Saved with today’s shelf: '+(shelfNow || "nothing selected yet")+'</p>'+
+  '</div>';
+}
+
+function entryCard(e){
+  const st = STATUS[e.status];
+  const prodNames = e.products.map(id => MAP[id] ? MAP[id].name : id);
+  let change = "";
+  if(e.added.length || e.removed.length){
+    change = '<div class="jchange">'+
+      (e.added.length ? '<span class="jplus">+ '+e.added.map(id=>MAP[id]?MAP[id].name:id).join(", ")+'</span>' : '')+
+      (e.removed.length ? '<span class="jminus">− '+e.removed.map(id=>MAP[id]?MAP[id].name:id).join(", ")+'</span>' : '')+
+    '</div>';
+  }
+  return '<div class="jentry" style="--jc:'+st.color+'">'+
+    '<div class="jdate">'+fmtDate(e.date)+'</div>'+
+    '<div class="jbody">'+
+      '<div class="jtop"><span class="jstatus">'+st.label+'</span>'+
+      '<button class="jdel" data-id="'+e.id+'" aria-label="Delete entry">'+IC.trash+'</button></div>'+
+      (e.note ? '<p class="jnote">'+escapeHtml(e.note)+'</p>' : '')+
+      change+
+      (prodNames.length ? '<div class="jproducts">'+prodNames.join(" · ")+'</div>' : '<div class="jproducts jnone">No products on your shelf that day</div>')+
+    '</div></div>';
+}
+
+function renderJournal(){
+  const sortedAsc = journal.slice().sort((a,b) => a.ts - b.ts);
+  const withDiff = sortedAsc.map((e,i) => {
+    if(i === 0) return Object.assign({}, e, { added:[], removed:[] });
+    const prev = sortedAsc[i-1];
+    const prevSet = new Set(prev.products), curSet = new Set(e.products);
+    return Object.assign({}, e, {
+      added: e.products.filter(id => !prevSet.has(id)),
+      removed: prev.products.filter(id => !curSet.has(id))
+    });
+  });
+  const newestFirst = withDiff.slice().reverse();
+
+  let html = '<p class="weeknote">Log how your skin’s doing, and I’ll snapshot what’s on your shelf each time — so if something flares up, you can see what changed.</p>';
+  html += journalForm();
+  html += newestFirst.length
+    ? '<div class="journal-list">'+newestFirst.map(entryCard).join("")+'</div>'
+    : '<div class="empty"><div class="dot"></div><h3>No entries yet</h3><p>Save your first entry above and I’ll start tracking it alongside your shelf.</p></div>';
+  return html;
+}
+
 function render(){
   persist();
   renderPicker();
   const r = document.getElementById("results");
-  if(sel.size === 0){
-    r.innerHTML = '<div class="empty"><div class="dot"></div><h3>Your shelf is empty</h3>'+
-      '<p>Pick a few products on the left and your routine builds itself.</p></div>'+
-      '<p class="disc">General layering guidance, not medical advice. Introduce new actives one at a time, patch test, and ease in slowly.</p>';
-    return;
-  }
+
   let html = '<div class="toggle">'+
     '<button data-v="daily" data-on="'+(view==="daily")+'">Daily</button>'+
-    '<button data-v="weekly" data-on="'+(view==="weekly")+'">Weekly plan</button></div>';
-  html += (view === "daily") ? renderDaily() : renderWeekly();
+    '<button data-v="weekly" data-on="'+(view==="weekly")+'">Weekly plan</button>'+
+    '<button data-v="journal" data-on="'+(view==="journal")+'">Journal</button></div>';
+
+  if(view === "journal"){
+    html += renderJournal();
+  } else if(sel.size === 0){
+    html += '<div class="empty"><div class="dot"></div><h3>Your shelf is empty</h3>'+
+      '<p>Pick a few products on the left and your routine builds itself.</p></div>';
+  } else {
+    html += (view === "daily") ? renderDaily() : renderWeekly();
+  }
+
   html += '<p class="disc">General layering guidance, not medical advice. Introduce new actives one at a time, patch test, and ease in slowly.</p>';
   r.innerHTML = html;
+
   r.querySelectorAll(".toggle button").forEach(b => b.onclick = () => { view = b.dataset.v; render(); });
+
+  if(view === "journal"){
+    const dateInput = document.getElementById("jdate");
+    if(dateInput) dateInput.onchange = e => { jDate = e.target.value || todayStr(); };
+    const noteInput = document.getElementById("jnoteinput");
+    if(noteInput) noteInput.oninput = e => { jNote = e.target.value; };
+    r.querySelectorAll(".jchip").forEach(b => b.onclick = () => { jStatus = b.dataset.status; render(); });
+    const saveBtn = document.getElementById("jsave");
+    if(saveBtn) saveBtn.onclick = addJournalEntry;
+    r.querySelectorAll(".jdel").forEach(b => b.onclick = () => deleteJournalEntry(b.dataset.id));
+  }
 }
 
 restore();
