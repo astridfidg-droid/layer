@@ -539,7 +539,7 @@ function renderJournal(){
   });
   const newestFirst = withDiff.slice().reverse();
 
-  let html = '<p class="weeknote">Log how your skin’s doing, and I’ll snapshot what’s on your shelf each time — so if something flares up, you can see what changed.</p>';
+  let html = '<p class="weeknote">Log how your skin’s doing, and I’ll snapshot what’s on your shelf each time. If something flares up, you can see what changed.</p>';
   html += journalForm();
   html += newestFirst.length
     ? '<div class="journal-list">'+newestFirst.map(entryCard).join("")+'</div>'
