@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LAYER: what goes on first?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<meta name="description" content="LAYER - tell it what's in your makeup bag and get the right application order, plus a beauty shelf for what you actually own." />
+<meta name="theme-color" content="#C0C2BE" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="favicon-48.png" sizes="48x48" type="image/png" />
+<link rel="icon" href="icon-192.png" sizes="192x192" type="image/png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="LAYER" />
+<style>
+  :root{
+    --paper:#C0C2BE; --surface:#D6D8D4; --card:#EAEBE8;
+    --espresso:#25272B; --espresso-soft:#54575B;
+    --taupe:#71746F; --line:#C6C8C3;
+    --lime:#C7E63F; --lime-deep:#8FAF27; --lime-tint:#E7F0C6;
+    --clay:#C0402E; --clay-tint:#EFDCD8; --clay-ink:#8A2E1E;
+    --cream:#EAEBE8;
+    --disp:'Archivo',system-ui,-apple-system,sans-serif;
+    --sans:'Instrument Sans',system-ui,-apple-system,sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+  body{ background:var(--paper); color:var(--espresso); font-family:var(--sans);
+    line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .wrap{ max-width:1080px; margin:0 auto; padding:0 22px 64px; }
+
+  .bar{ display:flex; align-items:baseline; justify-content:space-between; padding:22px 0 0; }
+  .mark{ font-family:var(--disp); font-weight:700; font-size:20px; letter-spacing:0.22em; }
+  .pagenav{ display:flex; gap:16px; }
+  .pagenav a{ font-family:var(--disp); font-weight:500; font-size:12.5px; color:var(--taupe);
+    text-decoration:none; transition:color .14s ease; }
+  .pagenav a.on{ color:var(--espresso); }
+  .pagenav a:hover{ color:var(--espresso); }
+
+  .hero{ padding:52px 0 42px; }
+  .hero h1{ font-family:var(--disp); font-weight:600; font-size:clamp(44px,8vw,84px);
+    line-height:0.94; letter-spacing:-0.02em; margin:0; max-width:14ch; }
+  .swipe{ height:15px; width:132px; background:var(--lime);
+    border-radius:40% 60% 55% 45%/60% 45% 55% 40%; margin:26px 0 24px; transform:rotate(-1.5deg); }
+  .lede{ font-size:clamp(15px,2vw,17px); color:var(--espresso-soft); max-width:46ch; margin:0; line-height:1.55; }
+
+  .grid{ display:grid; grid-template-columns:360px 1fr; gap:26px; align-items:start; }
+  @media(max-width:840px){ .grid{ grid-template-columns:1fr; } }
+
+  .picker{ background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:22px; }
+  .picker h2{ font-family:var(--disp); font-weight:600; font-size:17px; margin:0 0 4px; }
+  .picker .hint{ font-size:13px; color:var(--taupe); margin:0 0 18px; }
+  .cat{ font-family:var(--disp); font-weight:500; font-size:13px; color:var(--taupe); margin:18px 2px 9px; }
+  .cat.first{ margin-top:0; }
+  .pills{ display:flex; flex-wrap:wrap; gap:8px; }
+  .pill{ border:1px solid var(--line); background:#fff; color:var(--espresso); border-radius:999px;
+    padding:8px 15px; font-size:14px; font-family:var(--sans); cursor:pointer;
+    transition:border-color .14s ease, background .14s ease, transform .06s ease; }
+  .pill:hover{ border-color:var(--espresso-soft); }
+  .pill:active{ transform:scale(0.96); }
+  .pill:focus-visible{ outline:2px solid var(--espresso); outline-offset:2px; }
+  .pill[data-on="true"]{ background:var(--lime); color:var(--espresso); border-color:var(--lime-deep); font-weight:500; }
+  .clear{ margin-top:20px; display:inline-flex; align-items:center; gap:7px; background:none; border:none;
+    color:var(--taupe); font-size:13px; font-family:var(--sans); cursor:pointer; padding:4px 0; }
+  .clear:hover{ color:var(--espresso); }
+  .clear svg{ width:14px; height:14px; }
+
+  /* view toggle */
+  .toggle{ display:inline-flex; flex-wrap:wrap; background:var(--surface); border:1px solid var(--line);
+    border-radius:999px; padding:4px; margin-bottom:22px; }
+  .toggle button{ border:none; background:none; font-family:var(--disp); font-weight:500; font-size:14px;
+    color:var(--taupe); padding:8px 20px; border-radius:999px; cursor:pointer; transition:all .14s ease;
+    white-space:nowrap; }
+  .toggle button[data-on="true"]{ background:var(--espresso); color:var(--cream); }
+
+  .empty{ border:1px dashed var(--line); border-radius:20px; padding:56px 30px; text-align:center; }
+  .empty .dot{ width:46px; height:18px; background:var(--lime);
+    border-radius:40% 60% 55% 45%/60% 45% 55% 40%; margin:0 auto 20px; transform:rotate(-2deg); }
+  .empty h3{ font-family:var(--disp); font-weight:600; font-size:23px; margin:0 0 8px; }
+  .empty p{ color:var(--taupe); margin:0; font-size:14.5px; }
+
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:20px; padding:22px; }
+  .chead{ display:flex; align-items:center; gap:10px; }
+  .chead svg{ width:20px; height:20px; }
+  .chead h2{ font-family:var(--disp); font-weight:600; font-size:22px; margin:0; }
+  .count{ margin-left:auto; font-size:12.5px; opacity:0.65; }
+  .steps{ list-style:none; margin:16px 0 0; padding:0; }
+  .step{ display:flex; align-items:baseline; gap:14px; padding:11px 0; }
+  .step + .step{ border-top:1px solid var(--line); }
+  .num{ font-family:var(--disp); font-weight:500; font-size:17px; width:24px; flex-shrink:0; color:var(--lime-deep); }
+  .step .nm{ font-size:15px; font-weight:500; }
+  .step .nt{ font-size:12.5px; display:block; margin-top:1px; color:var(--taupe); }
+
+  .disc{ margin-top:26px; font-size:12px; color:var(--taupe); max-width:64ch; line-height:1.5; }
+  @media(prefers-reduced-motion:reduce){ .pill,.toggle button{ transition:none; } }
+
+  /* my shelf (beauty shelf) */
+  .myshelf-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:16px; }
+  .myshelf-item{ background:var(--card); border:1px solid var(--line); border-radius:20px;
+    padding:18px 16px 16px; display:flex; flex-direction:column; align-items:center; text-align:center; }
+  .myshelf-photo{ width:100%; height:150px; display:flex; align-items:flex-end; justify-content:center;
+    margin-bottom:14px; }
+  .myshelf-photo img{ max-width:100%; max-height:150px; object-fit:contain;
+    filter:drop-shadow(0 10px 10px rgba(37,39,43,0.16)); }
+  .myshelf-item .brand{ font-family:var(--disp); font-weight:600; font-size:10.5px; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--taupe); }
+  .myshelf-item .pname{ font-size:13.5px; font-weight:500; margin-top:3px; line-height:1.35; }
+
+  .myshelf-add{ border:1.5px dashed var(--line); background:none; cursor:pointer; border-radius:20px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+    min-height:228px; color:var(--taupe); font-family:var(--sans); font-size:13px;
+    transition:border-color .14s ease, color .14s ease; }
+  .myshelf-add:hover{ border-color:var(--espresso-soft); color:var(--espresso); }
+  .msadd-icon{ font-family:var(--disp); font-size:26px; font-weight:400; line-height:1; color:var(--lime-deep); }
+
+  .myshelf-own{ position:relative; }
+  .msdel{ position:absolute; top:10px; right:10px; background:rgba(255,255,255,0.88); border:none;
+    border-radius:999px; padding:6px; cursor:pointer; color:var(--taupe); display:flex; z-index:2; }
+  .msdel:hover{ color:var(--clay); }
+  .msdel svg{ width:13px; height:13px; }
+
+  .myshelf-photo--own{ align-items:stretch; overflow:hidden; border-radius:14px; background:var(--surface); }
+  .myshelf-photo--own img{ width:100%; height:100%; object-fit:cover; filter:none; }
+  .msf-placeholder{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:var(--taupe); }
+  .msf-placeholder svg{ width:32px; height:32px; }
+  .msf-pick{ margin-top:10px; font-family:var(--sans); font-size:12.5px; color:var(--espresso-soft);
+    background:#fff; border:1px solid var(--line); border-radius:999px; padding:6px 14px; cursor:pointer; }
+  .msf-name{ margin-top:10px; width:100%; font-family:var(--sans); font-size:13px; color:var(--espresso);
+    border:1px solid var(--line); border-radius:10px; padding:8px 10px; text-align:center; }
+  .msf-actions{ display:flex; gap:8px; margin-top:10px; width:100%; }
+  .msf-cancel, .msf-save{ flex:1; font-family:var(--disp); font-weight:600; font-size:12.5px;
+    border-radius:999px; padding:7px 0; cursor:pointer; }
+  .msf-cancel{ background:none; border:1px solid var(--line); color:var(--taupe); }
+  .msf-save{ background:var(--lime); border:1px solid var(--lime-deep); color:var(--espresso); }
+  .msf-save:disabled{ opacity:0.45; cursor:not-allowed; }
+  @media(max-width:480px){
+    .toggle button{ padding:8px 13px; font-size:12.5px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <div class="mark">LAYER</div>
+    <nav class="pagenav"><a href="index.html">Skincare</a><a href="makeup.html" class="on">Makeup</a></nav>
+  </div>
+
+  <header class="hero">
+    <h1>What goes on first?</h1>
+    <div class="swipe"></div>
+    <p class="lede">Tell me what's in your bag. You'll get it back in the right order, and a beauty shelf for what you actually own.</p>
+  </header>
+
+  <div class="grid">
+    <div class="picker" id="picker"></div>
+    <div id="results"></div>
+  </div>
+</div>
+
+<script>
+// ---- Icons (inline SVG) ----
+const IC = {
+  brush:'<svg viewBox="0 0 24 24" fill="none" stroke="var(--lime-deep)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 14.5 19 5a2.1 2.1 0 0 1 3 3l-9.5 9.5"/><path d="M4 20c.5-3 2-5 5-6l2 2c-1 3-3 4.5-6 5-1 .2-1.4-.2-1-1Z"/></path></svg>',
+  reset:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M10 11v6M14 11v6"/></svg>',
+  camera:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>'
+};
+
+// ---- Data ----
+const MAKEUP_ITEMS = [
+  { id:"primer",       name:"Primer",                    note:"Smooths pores and holds everything else in place", order:1,  cat:"Prep" },
+  { id:"corrector",    name:"Color corrector",           note:"Neutralizes redness, dark spots, or dullness",     order:2,  cat:"Base" },
+  { id:"foundation",   name:"Foundation",                note:"Evens out your skin tone",                         order:3,  cat:"Base" },
+  { id:"bbcream",      name:"BB cream / tinted moisturizer", note:"Lighter, more natural coverage",               order:3,  cat:"Base" },
+  { id:"concealer",    name:"Concealer",                 note:"Spot coverage, brightens under the eyes",          order:4,  cat:"Base" },
+  { id:"powder",       name:"Setting powder",            note:"Sets the base and cuts shine",                     order:5,  cat:"Base" },
+  { id:"contour",      name:"Contour",                   note:"Sculpts and adds shadow",                          order:6,  cat:"Contour & Cheeks" },
+  { id:"bronzer",      name:"Bronzer",                   note:"Warmth across the high points of the face",        order:6,  cat:"Contour & Cheeks" },
+  { id:"blush",        name:"Blush",                     note:"Color on the cheeks",                              order:7,  cat:"Contour & Cheeks" },
+  { id:"highlighter",  name:"Highlighter",                note:"Catches the light",                                order:8,  cat:"Contour & Cheeks" },
+  { id:"brows",        name:"Eyebrows",                  note:"Pencil, powder, or gel",                           order:9,  cat:"Eyes" },
+  { id:"eyeshadow",    name:"Eyeshadow",                 note:"Base color on the lids",                           order:10, cat:"Eyes" },
+  { id:"eyeliner",     name:"Eyeliner",                  note:"Defines the eye shape",                            order:11, cat:"Eyes" },
+  { id:"mascara",      name:"Mascara",                   note:"Lengthens and lifts lashes",                       order:12, cat:"Eyes" },
+  { id:"lipliner",     name:"Lip liner",                 note:"Defines the shape and holds color",                order:13, cat:"Lips" },
+  { id:"lipstick",     name:"Lipstick / lip tint",       note:"The color payoff",                                 order:14, cat:"Lips" },
+  { id:"lipgloss",     name:"Lip gloss",                 note:"Shine on top",                                     order:15, cat:"Lips" },
+  { id:"settingspray", name:"Setting spray",             note:"Locks everything in place",                        order:16, cat:"Set" }
+];
+const MAP = Object.fromEntries(MAKEUP_ITEMS.map(i => [i.id, i]));
+const CATS = ["Prep","Base","Contour & Cheeks","Eyes","Lips","Set"];
+
+// ---- Beauty Shelf: curate later, same pattern as skincare's My Shelf ----
+const MY_PRODUCTS = [];
+
+// ---- State ----
+const sel = new Set();
+let view = "routine";
+let myShelf = []; // { id, ts, name, photo:dataURL } - added locally by this visitor
+let addingShelfItem = false;
+let pendingPhoto = null;
+let pendingName = "";
+
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+// ---- Local persistence (no account, stays on this device) ----
+const STORE_KEY = "layer.makeup.v1";
+function persist(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify({ sel:[...sel], view, myShelf })); }catch(e){}
+}
+function restore(){
+  try{
+    const data = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
+    if(Array.isArray(data.sel)) data.sel.forEach(id => { if(MAP[id]) sel.add(id); });
+    if(["routine","myshelf"].includes(data.view)) view = data.view;
+    if(Array.isArray(data.myShelf)){
+      myShelf = data.myShelf.filter(p => p && p.id && p.name && p.photo);
+    }
+  }catch(e){}
+}
+
+// ---- Render ----
+function renderPicker(){
+  const p = document.getElementById("picker");
+  let html = '<h2>Your bag</h2><p class="hint">Tap everything you use.</p>';
+  CATS.forEach((cat, ci) => {
+    html += '<div class="cat'+(ci===0?' first':'')+'">'+cat+'</div><div class="pills">';
+    MAKEUP_ITEMS.filter(i => i.cat === cat).forEach(i => {
+      html += '<button class="pill" data-id="'+i.id+'" data-on="'+sel.has(i.id)+'">'+i.name+'</button>';
+    });
+    html += '</div>';
+  });
+  html += '<button class="clear" id="clear" style="display:'+(sel.size?'inline-flex':'none')+'">'+IC.reset+' Clear bag</button>';
+  p.innerHTML = html;
+  p.querySelectorAll(".pill").forEach(b => b.onclick = () => {
+    const id = b.dataset.id;
+    sel.has(id) ? sel.delete(id) : sel.add(id);
+    render();
+  });
+  const c = document.getElementById("clear");
+  if(c) c.onclick = () => { sel.clear(); render(); };
+}
+
+function stepLI(it, idx){
+  return '<li class="step"><span class="num">'+(idx+1)+'</span><span>'+
+    '<span class="nm">'+it.name+'</span>'+
+    '<span class="nt">'+it.note+'</span></span></li>';
+}
+
+function renderRoutine(){
+  const list = MAKEUP_ITEMS.filter(i => sel.has(i.id)).sort((a,b) => a.order - b.order);
+  let html = '<div class="card"><div class="chead">'+IC.brush+'<h2>Your routine</h2>'+
+    '<span class="count">'+list.length+' step'+(list.length!==1?'s':'')+'</span></div>'+
+    '<ol class="steps">'+list.map((it,i) => stepLI(it,i)).join("")+'</ol></div>';
+  return html;
+}
+
+function resizeImageToDataURL(file, size, cb){
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      const scale = Math.max(size / img.width, size / img.height);
+      const sw = size / scale, sh = size / scale;
+      const sx = (img.width - sw) / 2, sy = (img.height - sh) / 2;
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, size, size);
+      cb(canvas.toDataURL("image/jpeg", 0.78));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function addMyShelfItem(){
+  if(!pendingPhoto || !pendingName.trim()) return;
+  myShelf.push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    ts: Date.now(),
+    name: pendingName.trim(),
+    photo: pendingPhoto
+  });
+  addingShelfItem = false; pendingPhoto = null; pendingName = "";
+  render();
+}
+function deleteMyShelfItem(id){
+  myShelf = myShelf.filter(p => p.id !== id);
+  render();
+}
+
+function myShelfFormTile(){
+  return '<div class="myshelf-item myshelf-item--form">'+
+    '<div class="myshelf-photo myshelf-photo--own">'+
+      (pendingPhoto ? '<img src="'+pendingPhoto+'" alt="" />' : '<div class="msf-placeholder">'+IC.camera+'</div>')+
+    '</div>'+
+    '<input type="file" id="msfile" accept="image/*" capture="environment" style="display:none" />'+
+    '<button class="msf-pick" id="msfpick" type="button">'+(pendingPhoto ? 'Change photo' : 'Choose photo')+'</button>'+
+    '<input type="text" id="msfname" class="msf-name" placeholder="Product name" maxlength="60" value="'+escapeHtml(pendingName)+'" />'+
+    '<div class="msf-actions">'+
+      '<button class="msf-cancel" id="msfcancel" type="button">Cancel</button>'+
+      '<button class="msf-save" id="msfsave" type="button"'+((pendingPhoto && pendingName.trim()) ? '' : ' disabled')+'>Save</button>'+
+    '</div>'+
+  '</div>';
+}
+
+function renderMyShelf(){
+  let html = '<p class="lede" style="font-size:14px;max-width:56ch;margin-bottom:20px;">The real products, not just categories. Add what you actually own. It stays only on your own device.</p>';
+  html += '<div class="myshelf-grid">';
+  MY_PRODUCTS.forEach(p => {
+    html += '<div class="myshelf-item"><div class="myshelf-photo"><img src="'+p.img+'" alt="'+p.brand+' '+p.name+'" loading="lazy" /></div>'+
+      '<span class="brand">'+p.brand+'</span><span class="pname">'+p.name+'</span></div>';
+  });
+  myShelf.forEach(p => {
+    html += '<div class="myshelf-item myshelf-own">'+
+      '<button class="msdel" data-id="'+p.id+'" aria-label="Remove">'+IC.trash+'</button>'+
+      '<div class="myshelf-photo myshelf-photo--own"><img src="'+p.photo+'" alt="'+escapeHtml(p.name)+'" /></div>'+
+      '<span class="pname">'+escapeHtml(p.name)+'</span>'+
+    '</div>';
+  });
+  html += addingShelfItem
+    ? myShelfFormTile()
+    : '<button class="myshelf-add" id="msaddbtn" type="button"><span class="msadd-icon">+</span><span>Add your own</span></button>';
+  html += '</div>';
+  return html;
+}
+
+function render(){
+  persist();
+  renderPicker();
+  const r = document.getElementById("results");
+
+  let html = '<div class="toggle">'+
+    '<button data-v="routine" data-on="'+(view==="routine")+'">Routine</button>'+
+    '<button data-v="myshelf" data-on="'+(view==="myshelf")+'">Beauty Shelf</button></div>';
+
+  if(view === "myshelf"){
+    html += renderMyShelf();
+  } else if(sel.size === 0){
+    html += '<div class="empty"><div class="dot"></div><h3>Your bag is empty</h3>'+
+      '<p>Pick a few products on the left and the order builds itself.</p></div>';
+  } else {
+    html += renderRoutine();
+  }
+
+  html += '<p class="disc">General application order, not a tutorial. Skip whatever doesn’t apply to you.</p>';
+  r.innerHTML = html;
+
+  r.querySelectorAll(".toggle button").forEach(b => b.onclick = () => { view = b.dataset.v; render(); });
+
+  if(view === "myshelf"){
+    const addBtn = document.getElementById("msaddbtn");
+    if(addBtn) addBtn.onclick = () => { addingShelfItem = true; pendingPhoto = null; pendingName = ""; render(); };
+    const cancelBtn = document.getElementById("msfcancel");
+    if(cancelBtn) cancelBtn.onclick = () => { addingShelfItem = false; pendingPhoto = null; pendingName = ""; render(); };
+    const fileInput = document.getElementById("msfile");
+    const pickBtn = document.getElementById("msfpick");
+    if(pickBtn && fileInput) pickBtn.onclick = () => fileInput.click();
+    if(fileInput) fileInput.onchange = (e) => {
+      const f = e.target.files[0];
+      if(!f) return;
+      resizeImageToDataURL(f, 480, (dataUrl) => { pendingPhoto = dataUrl; render(); });
+    };
+    const nameInput = document.getElementById("msfname");
+    if(nameInput) nameInput.oninput = (e) => {
+      pendingName = e.target.value;
+      const sb = document.getElementById("msfsave");
+      if(sb) sb.disabled = !(pendingPhoto && pendingName.trim());
+    };
+    const saveBtn = document.getElementById("msfsave");
+    if(saveBtn) saveBtn.onclick = addMyShelfItem;
+    r.querySelectorAll(".msdel").forEach(b => b.onclick = () => deleteMyShelfItem(b.dataset.id));
+  }
+}
+
+restore();
+render();
+
+// ---- Make it installable / work offline ----
+if("serviceWorker" in navigator){
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+</script>
+</body>
+</html>

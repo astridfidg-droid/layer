@@ -37,6 +37,11 @@
   .bar{ display:flex; align-items:baseline; justify-content:space-between; padding:22px 0 0; }
   .mark{ font-family:var(--disp); font-weight:700; font-size:20px; letter-spacing:0.22em; }
   .bar .tag{ font-size:12.5px; color:var(--taupe); }
+  .pagenav{ display:flex; gap:16px; }
+  .pagenav a{ font-family:var(--disp); font-weight:500; font-size:12.5px; color:var(--taupe);
+    text-decoration:none; transition:color .14s ease; }
+  .pagenav a.on{ color:var(--espresso); }
+  .pagenav a:hover{ color:var(--espresso); }
 
   .hero{ padding:52px 0 42px; }
   .hero h1{ font-family:var(--disp); font-weight:600; font-size:clamp(44px,8vw,84px);
@@ -224,7 +229,7 @@
 <div class="wrap">
   <div class="bar">
     <div class="mark">LAYER</div>
-    <div class="tag">Simplifying layering</div>
+    <nav class="pagenav"><a href="index.html" class="on">Skincare</a><a href="makeup.html">Makeup</a></nav>
   </div>
 
   <header class="hero">
