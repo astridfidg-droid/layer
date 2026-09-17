@@ -244,6 +244,7 @@ let addingShelfItem = false;
 let pendingPhoto = null;
 let pendingCutout = false;
 let pendingName = "";
+let pendingBrand = "";
 let processingPhoto = false;
 
 function escapeHtml(s){
@@ -404,10 +405,11 @@ function addMyShelfItem(){
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
     ts: Date.now(),
     name: pendingName.trim(),
+    brand: pendingBrand.trim(),
     photo: pendingPhoto,
     cutout: pendingCutout
   });
-  addingShelfItem = false; pendingPhoto = null; pendingCutout = false; pendingName = "";
+  addingShelfItem = false; pendingPhoto = null; pendingCutout = false; pendingName = ""; pendingBrand = "";
   render();
 }
 function deleteMyShelfItem(id){
@@ -425,6 +427,7 @@ function myShelfFormTile(){
     '<input type="file" id="msfile" accept="image/*" capture="environment" style="display:none"'+(processingPhoto?' disabled':'')+' />'+
     '<button class="msf-pick" id="msfpick" type="button"'+(processingPhoto?' disabled':'')+'>'+
       (processingPhoto ? 'Cutting out background…' : (pendingPhoto ? 'Change photo' : 'Choose photo'))+'</button>'+
+    '<input type="text" id="msfbrand" class="msf-name" placeholder="Brand (optional)" maxlength="40" value="'+escapeHtml(pendingBrand)+'" />'+
     '<input type="text" id="msfname" class="msf-name" placeholder="Product name" maxlength="60" value="'+escapeHtml(pendingName)+'" />'+
     '<div class="msf-actions">'+
       '<button class="msf-cancel" id="msfcancel" type="button">Cancel</button>'+
@@ -445,6 +448,7 @@ function renderMyShelf(){
     html += '<div class="myshelf-item myshelf-own">'+
       '<button class="msdel" data-id="'+p.id+'" aria-label="Remove">'+IC.trash+'</button>'+
       '<div class="'+photoCls+'"><img src="'+p.photo+'" alt="'+escapeHtml(p.name)+'" /></div>'+
+      (p.brand ? '<span class="brand">'+escapeHtml(p.brand)+'</span>' : '')+
       '<span class="pname">'+escapeHtml(p.name)+'</span>'+
     '</div>';
   });
@@ -480,9 +484,9 @@ function render(){
 
   if(view === "myshelf"){
     const addBtn = document.getElementById("msaddbtn");
-    if(addBtn) addBtn.onclick = () => { addingShelfItem = true; pendingPhoto = null; pendingName = ""; render(); };
+    if(addBtn) addBtn.onclick = () => { addingShelfItem = true; pendingPhoto = null; pendingName = ""; pendingBrand = ""; render(); };
     const cancelBtn = document.getElementById("msfcancel");
-    if(cancelBtn) cancelBtn.onclick = () => { addingShelfItem = false; pendingPhoto = null; pendingName = ""; render(); };
+    if(cancelBtn) cancelBtn.onclick = () => { addingShelfItem = false; pendingPhoto = null; pendingName = ""; pendingBrand = ""; render(); };
     const fileInput = document.getElementById("msfile");
     const pickBtn = document.getElementById("msfpick");
     if(pickBtn && fileInput) pickBtn.onclick = () => fileInput.click();
@@ -505,6 +509,8 @@ function render(){
       const sb = document.getElementById("msfsave");
       if(sb) sb.disabled = !(pendingPhoto && pendingName.trim());
     };
+    const brandInput = document.getElementById("msfbrand");
+    if(brandInput) brandInput.oninput = (e) => { pendingBrand = e.target.value; };
     const saveBtn = document.getElementById("msfsave");
     if(saveBtn) saveBtn.onclick = addMyShelfItem;
     r.querySelectorAll(".msdel").forEach(b => b.onclick = () => deleteMyShelfItem(b.dataset.id));
