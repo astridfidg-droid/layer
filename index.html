@@ -190,6 +190,34 @@
   .myshelf-item .brand{ font-family:var(--disp); font-weight:600; font-size:10.5px; letter-spacing:.09em;
     text-transform:uppercase; color:var(--taupe); }
   .myshelf-item .pname{ font-size:13.5px; font-weight:500; margin-top:3px; line-height:1.35; }
+
+  .myshelf-add{ border:1.5px dashed var(--line); background:none; cursor:pointer; border-radius:20px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+    min-height:228px; color:var(--taupe); font-family:var(--sans); font-size:13px;
+    transition:border-color .14s ease, color .14s ease; }
+  .myshelf-add:hover{ border-color:var(--espresso-soft); color:var(--espresso); }
+  .msadd-icon{ font-family:var(--disp); font-size:26px; font-weight:400; line-height:1; color:var(--lime-deep); }
+
+  .myshelf-own{ position:relative; }
+  .msdel{ position:absolute; top:10px; right:10px; background:rgba(255,255,255,0.88); border:none;
+    border-radius:999px; padding:6px; cursor:pointer; color:var(--taupe); display:flex; z-index:2; }
+  .msdel:hover{ color:var(--clay); }
+  .msdel svg{ width:13px; height:13px; }
+
+  .myshelf-photo--own{ align-items:stretch; overflow:hidden; border-radius:14px; background:var(--surface); }
+  .myshelf-photo--own img{ width:100%; height:100%; object-fit:cover; filter:none; }
+  .msf-placeholder{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:var(--taupe); }
+  .msf-placeholder svg{ width:32px; height:32px; }
+  .msf-pick{ margin-top:10px; font-family:var(--sans); font-size:12.5px; color:var(--espresso-soft);
+    background:#fff; border:1px solid var(--line); border-radius:999px; padding:6px 14px; cursor:pointer; }
+  .msf-name{ margin-top:10px; width:100%; font-family:var(--sans); font-size:13px; color:var(--espresso);
+    border:1px solid var(--line); border-radius:10px; padding:8px 10px; text-align:center; }
+  .msf-actions{ display:flex; gap:8px; margin-top:10px; width:100%; }
+  .msf-cancel, .msf-save{ flex:1; font-family:var(--disp); font-weight:600; font-size:12.5px;
+    border-radius:999px; padding:7px 0; cursor:pointer; }
+  .msf-cancel{ background:none; border:1px solid var(--line); color:var(--taupe); }
+  .msf-save{ background:var(--lime); border:1px solid var(--lime-deep); color:var(--espresso); }
+  .msf-save:disabled{ opacity:0.45; cursor:not-allowed; }
 </style>
 </head>
 <body>
@@ -220,7 +248,8 @@ const IC = {
   check:'<svg viewBox="0 0 24 24" fill="none" stroke="var(--lime-deep)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
   reset:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
   info: '<svg viewBox="0 0 24 24" fill="none" stroke="#5A5D56" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/></svg>',
-  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M10 11v6M14 11v6"/></svg>'
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M10 11v6M14 11v6"/></svg>',
+  camera:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>'
 };
 
 // ---- Data ----
@@ -317,6 +346,10 @@ const MY_PRODUCTS = [
 const sel = new Set();
 let view = "daily";
 let journal = []; // { id, ts, date, status, note, products:[ids] }
+let myShelf = []; // { id, ts, name, brand, photo:dataURL } - added locally by this visitor
+let addingShelfItem = false;
+let pendingPhoto = null;
+let pendingName = "";
 
 // ---- Journal setup ----
 const STATUS = {
@@ -365,7 +398,7 @@ function deleteJournalEntry(id){
 // ---- Local persistence (no account, stays on this device) ----
 const STORE_KEY = "layer.shelf.v1";
 function persist(){
-  try{ localStorage.setItem(STORE_KEY, JSON.stringify({ sel:[...sel], view, journal })); }catch(e){}
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify({ sel:[...sel], view, journal, myShelf })); }catch(e){}
 }
 function restore(){
   try{
@@ -374,6 +407,9 @@ function restore(){
     if(["daily","weekly","journal","myshelf"].includes(data.view)) view = data.view;
     if(Array.isArray(data.journal)){
       journal = data.journal.filter(e => e && e.id && e.date && STATUS_ORDER.includes(e.status) && Array.isArray(e.products));
+    }
+    if(Array.isArray(data.myShelf)){
+      myShelf = data.myShelf.filter(p => p && p.id && p.name && p.photo);
     }
   }catch(e){}
 }
@@ -572,17 +608,73 @@ function renderJournal(){
   return html;
 }
 
+function resizeImageToDataURL(file, size, cb){
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      const scale = Math.max(size / img.width, size / img.height);
+      const sw = size / scale, sh = size / scale;
+      const sx = (img.width - sw) / 2, sy = (img.height - sh) / 2;
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, size, size);
+      cb(canvas.toDataURL("image/jpeg", 0.78));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function addMyShelfItem(){
+  if(!pendingPhoto || !pendingName.trim()) return;
+  myShelf.push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    ts: Date.now(),
+    name: pendingName.trim(),
+    photo: pendingPhoto
+  });
+  addingShelfItem = false; pendingPhoto = null; pendingName = "";
+  render();
+}
+function deleteMyShelfItem(id){
+  myShelf = myShelf.filter(p => p.id !== id);
+  render();
+}
+
+function myShelfFormTile(){
+  return '<div class="myshelf-item myshelf-item--form">'+
+    '<div class="myshelf-photo myshelf-photo--own">'+
+      (pendingPhoto ? '<img src="'+pendingPhoto+'" alt="" />' : '<div class="msf-placeholder">'+IC.camera+'</div>')+
+    '</div>'+
+    '<input type="file" id="msfile" accept="image/*" capture="environment" style="display:none" />'+
+    '<button class="msf-pick" id="msfpick" type="button">'+(pendingPhoto ? 'Change photo' : 'Choose photo')+'</button>'+
+    '<input type="text" id="msfname" class="msf-name" placeholder="Product name" maxlength="60" value="'+escapeHtml(pendingName)+'" />'+
+    '<div class="msf-actions">'+
+      '<button class="msf-cancel" id="msfcancel" type="button">Cancel</button>'+
+      '<button class="msf-save" id="msfsave" type="button"'+((pendingPhoto && pendingName.trim()) ? '' : ' disabled')+'>Save</button>'+
+    '</div>'+
+  '</div>';
+}
+
 function renderMyShelf(){
-  if(!MY_PRODUCTS.length){
-    return '<div class="empty"><div class="dot"></div><h3>Nothing on here yet</h3>'+
-      '<p>Tell me what you actually use and I’ll add the real bottle, cut out and all.</p></div>';
-  }
-  let html = '<p class="weeknote">The real bottles, not just categories. Everything I could find a clean photo for.</p>';
+  let html = '<p class="weeknote">The real bottles, not just categories. Everything I could find a clean photo for, plus whatever you add yourself. That part stays only on your own device.</p>';
   html += '<div class="myshelf-grid">';
   MY_PRODUCTS.forEach(p => {
     html += '<div class="myshelf-item"><div class="myshelf-photo"><img src="'+p.img+'" alt="'+p.brand+' '+p.name+'" loading="lazy" /></div>'+
       '<span class="brand">'+p.brand+'</span><span class="pname">'+p.name+'</span></div>';
   });
+  myShelf.forEach(p => {
+    html += '<div class="myshelf-item myshelf-own">'+
+      '<button class="msdel" data-id="'+p.id+'" aria-label="Remove">'+IC.trash+'</button>'+
+      '<div class="myshelf-photo myshelf-photo--own"><img src="'+p.photo+'" alt="'+escapeHtml(p.name)+'" /></div>'+
+      '<span class="pname">'+escapeHtml(p.name)+'</span>'+
+    '</div>';
+  });
+  html += addingShelfItem
+    ? myShelfFormTile()
+    : '<button class="myshelf-add" id="msaddbtn" type="button"><span class="msadd-icon">+</span><span>Add your own</span></button>';
   html += '</div>';
   return html;
 }
@@ -623,6 +715,30 @@ function render(){
     const saveBtn = document.getElementById("jsave");
     if(saveBtn) saveBtn.onclick = addJournalEntry;
     r.querySelectorAll(".jdel").forEach(b => b.onclick = () => deleteJournalEntry(b.dataset.id));
+  }
+
+  if(view === "myshelf"){
+    const addBtn = document.getElementById("msaddbtn");
+    if(addBtn) addBtn.onclick = () => { addingShelfItem = true; pendingPhoto = null; pendingName = ""; render(); };
+    const cancelBtn = document.getElementById("msfcancel");
+    if(cancelBtn) cancelBtn.onclick = () => { addingShelfItem = false; pendingPhoto = null; pendingName = ""; render(); };
+    const fileInput = document.getElementById("msfile");
+    const pickBtn = document.getElementById("msfpick");
+    if(pickBtn && fileInput) pickBtn.onclick = () => fileInput.click();
+    if(fileInput) fileInput.onchange = (e) => {
+      const f = e.target.files[0];
+      if(!f) return;
+      resizeImageToDataURL(f, 480, (dataUrl) => { pendingPhoto = dataUrl; render(); });
+    };
+    const nameInput = document.getElementById("msfname");
+    if(nameInput) nameInput.oninput = (e) => {
+      pendingName = e.target.value;
+      const sb = document.getElementById("msfsave");
+      if(sb) sb.disabled = !(pendingPhoto && pendingName.trim());
+    };
+    const saveBtn = document.getElementById("msfsave");
+    if(saveBtn) saveBtn.onclick = addMyShelfItem;
+    r.querySelectorAll(".msdel").forEach(b => b.onclick = () => deleteMyShelfItem(b.dataset.id));
   }
 }
 
