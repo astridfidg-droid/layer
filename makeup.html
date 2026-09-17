@@ -146,6 +146,14 @@
   .msf-cancel{ background:none; border:1px solid var(--line); color:var(--taupe); }
   .msf-save{ background:var(--lime); border:1px solid var(--lime-deep); color:var(--espresso); }
   .msf-save:disabled{ opacity:0.45; cursor:not-allowed; }
+  .msf-pick:disabled{ opacity:0.55; cursor:not-allowed; }
+  .myshelf-photo--own.myshelf-photo--cut{ align-items:flex-end; overflow:visible; background:none; }
+  .myshelf-photo--own.myshelf-photo--cut img{ width:auto; height:100%; object-fit:contain;
+    filter:drop-shadow(0 10px 10px rgba(37,39,43,0.16)); }
+  .msf-spin{ width:26px; height:26px; border:3px solid var(--line); border-top-color:var(--lime-deep);
+    border-radius:50%; animation:msfspin 0.8s linear infinite; }
+  @keyframes msfspin{ to{ transform:rotate(360deg); } }
+  @media(prefers-reduced-motion:reduce){ .msf-spin{ animation:none; } }
   @media(max-width:480px){
     .toggle button{ padding:8px 13px; font-size:12.5px; }
   }
@@ -234,7 +242,9 @@ let view = "routine";
 let myShelf = []; // { id, ts, name, photo:dataURL } - added locally by this visitor
 let addingShelfItem = false;
 let pendingPhoto = null;
+let pendingCutout = false;
 let pendingName = "";
+let processingPhoto = false;
 
 function escapeHtml(s){
   return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -328,15 +338,76 @@ function resizeImageToDataURL(file, size, cb){
   reader.readAsDataURL(file);
 }
 
+// Crops a (possibly transparent) blob tight to its non-transparent content,
+// then scales it down, mirroring the same trim-and-shrink used for the
+// curated product photos.
+function blobToTrimmedDataURL(blob, maxSize){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      try{
+        const workScale = Math.min(1, 900 / Math.max(img.width, img.height));
+        const ww = Math.max(1, Math.round(img.width * workScale));
+        const wh = Math.max(1, Math.round(img.height * workScale));
+        const work = document.createElement("canvas");
+        work.width = ww; work.height = wh;
+        const wctx = work.getContext("2d");
+        wctx.drawImage(img, 0, 0, ww, wh);
+        const data = wctx.getImageData(0, 0, ww, wh).data;
+        let x0 = ww, x1 = 0, y0 = wh, y1 = 0, found = false;
+        for(let y = 0; y < wh; y++){
+          for(let x = 0; x < ww; x++){
+            if(data[(y * ww + x) * 4 + 3] > 12){
+              found = true;
+              if(x < x0) x0 = x; if(x > x1) x1 = x;
+              if(y < y0) y0 = y; if(y > y1) y1 = y;
+            }
+          }
+        }
+        if(!found){ x0 = 0; y0 = 0; x1 = ww - 1; y1 = wh - 1; }
+        const pad = Math.round(Math.max(x1 - x0, y1 - y0) * 0.04) + 3;
+        x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad);
+        x1 = Math.min(ww - 1, x1 + pad); y1 = Math.min(wh - 1, y1 + pad);
+        const cw = x1 - x0 + 1, ch = y1 - y0 + 1;
+
+        const finalScale = Math.min(1, maxSize / Math.max(cw, ch));
+        const outW = Math.max(1, Math.round(cw * finalScale));
+        const outH = Math.max(1, Math.round(ch * finalScale));
+        const out = document.createElement("canvas");
+        out.width = outW; out.height = outH;
+        const octx = out.getContext("2d");
+        const inv = 1 / workScale;
+        octx.drawImage(img, x0 * inv, y0 * inv, cw * inv, ch * inv, 0, 0, outW, outH);
+        resolve(out.toDataURL("image/png"));
+      }catch(err){ reject(err); }
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(blob);
+  });
+}
+
+// Cuts the background out entirely client-side (nothing is uploaded anywhere).
+// Falls back to a plain cropped square if the model can't load (e.g. offline).
+async function removeBgAndCrop(file, maxSize){
+  const mod = await import("https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm");
+  const removeBackground = mod.removeBackground || mod.default;
+  const blob = await removeBackground(file, {
+    model: "isnet_quint8",
+    output: { format: "image/png" }
+  });
+  return blobToTrimmedDataURL(blob, maxSize);
+}
+
 function addMyShelfItem(){
   if(!pendingPhoto || !pendingName.trim()) return;
   myShelf.push({
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
     ts: Date.now(),
     name: pendingName.trim(),
-    photo: pendingPhoto
+    photo: pendingPhoto,
+    cutout: pendingCutout
   });
-  addingShelfItem = false; pendingPhoto = null; pendingName = "";
+  addingShelfItem = false; pendingPhoto = null; pendingCutout = false; pendingName = "";
   render();
 }
 function deleteMyShelfItem(id){
@@ -345,16 +416,19 @@ function deleteMyShelfItem(id){
 }
 
 function myShelfFormTile(){
+  const photoInner = processingPhoto
+    ? '<div class="msf-placeholder"><span class="msf-spin"></span></div>'
+    : (pendingPhoto ? '<img src="'+pendingPhoto+'" alt="" />' : '<div class="msf-placeholder">'+IC.camera+'</div>');
+  const photoCls = "myshelf-photo myshelf-photo--own" + (pendingPhoto && pendingCutout ? " myshelf-photo--cut" : "");
   return '<div class="myshelf-item myshelf-item--form">'+
-    '<div class="myshelf-photo myshelf-photo--own">'+
-      (pendingPhoto ? '<img src="'+pendingPhoto+'" alt="" />' : '<div class="msf-placeholder">'+IC.camera+'</div>')+
-    '</div>'+
-    '<input type="file" id="msfile" accept="image/*" capture="environment" style="display:none" />'+
-    '<button class="msf-pick" id="msfpick" type="button">'+(pendingPhoto ? 'Change photo' : 'Choose photo')+'</button>'+
+    '<div class="'+photoCls+'">'+photoInner+'</div>'+
+    '<input type="file" id="msfile" accept="image/*" capture="environment" style="display:none"'+(processingPhoto?' disabled':'')+' />'+
+    '<button class="msf-pick" id="msfpick" type="button"'+(processingPhoto?' disabled':'')+'>'+
+      (processingPhoto ? 'Cutting out background…' : (pendingPhoto ? 'Change photo' : 'Choose photo'))+'</button>'+
     '<input type="text" id="msfname" class="msf-name" placeholder="Product name" maxlength="60" value="'+escapeHtml(pendingName)+'" />'+
     '<div class="msf-actions">'+
       '<button class="msf-cancel" id="msfcancel" type="button">Cancel</button>'+
-      '<button class="msf-save" id="msfsave" type="button"'+((pendingPhoto && pendingName.trim()) ? '' : ' disabled')+'>Save</button>'+
+      '<button class="msf-save" id="msfsave" type="button"'+((pendingPhoto && pendingName.trim() && !processingPhoto) ? '' : ' disabled')+'>Save</button>'+
     '</div>'+
   '</div>';
 }
@@ -367,9 +441,10 @@ function renderMyShelf(){
       '<span class="brand">'+p.brand+'</span><span class="pname">'+p.name+'</span></div>';
   });
   myShelf.forEach(p => {
+    const photoCls = p.cutout ? "myshelf-photo" : "myshelf-photo myshelf-photo--own";
     html += '<div class="myshelf-item myshelf-own">'+
       '<button class="msdel" data-id="'+p.id+'" aria-label="Remove">'+IC.trash+'</button>'+
-      '<div class="myshelf-photo myshelf-photo--own"><img src="'+p.photo+'" alt="'+escapeHtml(p.name)+'" /></div>'+
+      '<div class="'+photoCls+'"><img src="'+p.photo+'" alt="'+escapeHtml(p.name)+'" /></div>'+
       '<span class="pname">'+escapeHtml(p.name)+'</span>'+
     '</div>';
   });
@@ -414,7 +489,15 @@ function render(){
     if(fileInput) fileInput.onchange = (e) => {
       const f = e.target.files[0];
       if(!f) return;
-      resizeImageToDataURL(f, 480, (dataUrl) => { pendingPhoto = dataUrl; render(); });
+      pendingPhoto = null; processingPhoto = true; render();
+      removeBgAndCrop(f, 480).then((dataUrl) => {
+        pendingPhoto = dataUrl; pendingCutout = true; processingPhoto = false; render();
+      }).catch((err) => {
+        console.warn("Background removal unavailable, using a plain photo instead.", err);
+        resizeImageToDataURL(f, 480, (dataUrl) => {
+          pendingPhoto = dataUrl; pendingCutout = false; processingPhoto = false; render();
+        });
+      });
     };
     const nameInput = document.getElementById("msfname");
     if(nameInput) nameInput.oninput = (e) => {
