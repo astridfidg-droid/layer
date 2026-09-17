@@ -95,6 +95,14 @@
   .num{ font-family:var(--disp); font-weight:500; font-size:17px; width:24px; flex-shrink:0; color:var(--lime-deep); }
   .step .nm{ font-size:15px; font-weight:500; }
   .step .nt{ font-size:12.5px; display:block; margin-top:1px; color:var(--taupe); }
+  .flag{ font-size:11px; font-weight:600; margin-left:7px; color:var(--clay); }
+
+  .notes{ display:flex; flex-direction:column; gap:11px; margin-bottom:22px; }
+  .note{ border-radius:15px; padding:15px 17px; font-size:14px; display:flex; gap:12px; align-items:flex-start;
+    background:#D9DBD6; color:#33352F; }
+  .note svg{ width:18px; height:18px; flex-shrink:0; margin-top:1px; }
+  .note b{ font-weight:600; font-family:var(--disp); font-size:14.5px; display:block; }
+  .note p{ margin:4px 0 0; line-height:1.5; }
 
   .disc{ margin-top:26px; font-size:12px; color:var(--taupe); max-width:64ch; line-height:1.5; }
   @media(prefers-reduced-motion:reduce){ .pill,.toggle button{ transition:none; } }
@@ -168,32 +176,54 @@ const IC = {
   brush:'<svg viewBox="0 0 24 24" fill="none" stroke="var(--lime-deep)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 14.5 19 5a2.1 2.1 0 0 1 3 3l-9.5 9.5"/><path d="M4 20c.5-3 2-5 5-6l2 2c-1 3-3 4.5-6 5-1 .2-1.4-.2-1-1Z"/></path></svg>',
   reset:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
   trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M10 11v6M14 11v6"/></svg>',
-  camera:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>'
+  camera:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+  info: '<svg viewBox="0 0 24 24" fill="none" stroke="#5A5D56" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/></svg>'
 };
 
 // ---- Data ----
 const MAKEUP_ITEMS = [
-  { id:"primer",       name:"Primer",                    note:"Smooths pores and holds everything else in place", order:1,  cat:"Prep" },
-  { id:"corrector",    name:"Color corrector",           note:"Neutralizes redness, dark spots, or dullness",     order:2,  cat:"Base" },
-  { id:"foundation",   name:"Foundation",                note:"Evens out your skin tone",                         order:3,  cat:"Base" },
-  { id:"bbcream",      name:"BB cream / tinted moisturizer", note:"Lighter, more natural coverage",               order:3,  cat:"Base" },
-  { id:"concealer",    name:"Concealer",                 note:"Spot coverage, brightens under the eyes",          order:4,  cat:"Base" },
-  { id:"powder",       name:"Setting powder",            note:"Sets the base and cuts shine",                     order:5,  cat:"Base" },
-  { id:"contour",      name:"Contour",                   note:"Sculpts and adds shadow",                          order:6,  cat:"Contour & Cheeks" },
-  { id:"bronzer",      name:"Bronzer",                   note:"Warmth across the high points of the face",        order:6,  cat:"Contour & Cheeks" },
-  { id:"blush",        name:"Blush",                     note:"Color on the cheeks",                              order:7,  cat:"Contour & Cheeks" },
-  { id:"highlighter",  name:"Highlighter",                note:"Catches the light",                                order:8,  cat:"Contour & Cheeks" },
-  { id:"brows",        name:"Eyebrows",                  note:"Pencil, powder, or gel",                           order:9,  cat:"Eyes" },
-  { id:"eyeshadow",    name:"Eyeshadow",                 note:"Base color on the lids",                           order:10, cat:"Eyes" },
-  { id:"eyeliner",     name:"Eyeliner",                  note:"Defines the eye shape",                            order:11, cat:"Eyes" },
-  { id:"mascara",      name:"Mascara",                   note:"Lengthens and lifts lashes",                       order:12, cat:"Eyes" },
-  { id:"lipliner",     name:"Lip liner",                 note:"Defines the shape and holds color",                order:13, cat:"Lips" },
-  { id:"lipstick",     name:"Lipstick / lip tint",       note:"The color payoff",                                 order:14, cat:"Lips" },
-  { id:"lipgloss",     name:"Lip gloss",                 note:"Shine on top",                                     order:15, cat:"Lips" },
-  { id:"settingspray", name:"Setting spray",             note:"Locks everything in place",                        order:16, cat:"Set" }
+  { id:"primer",         name:"Primer",                    note:"Smooths pores and holds everything else in place", order:1,  cat:"Prep" },
+  { id:"corrector",      name:"Color corrector",           note:"Neutralizes redness, dark spots, or dullness",     order:2,  cat:"Cream" },
+  { id:"foundation",     name:"Foundation",                note:"Evens out your skin tone",                         order:3,  cat:"Cream" },
+  { id:"bbcream",        name:"BB cream / tinted moisturizer", note:"Lighter, more natural coverage",               order:3,  cat:"Cream" },
+  { id:"concealer",      name:"Concealer",                 note:"Spot coverage, brightens under the eyes",          order:4,  cat:"Cream" },
+  { id:"contourcream",   name:"Cream contour",             note:"Blends into the base while it's still tacky",      order:5,  cat:"Cream" },
+  { id:"bronzercream",   name:"Cream bronzer",             note:"Warmth, blended in before anything sets",          order:5,  cat:"Cream" },
+  { id:"blushcream",     name:"Cream blush",               note:"Melts into skin for a flushed, undone look",       order:6,  cat:"Cream" },
+  { id:"highlightercream", name:"Cream highlighter",       note:"A dewy glow from underneath",                      order:7,  cat:"Cream" },
+  { id:"powder",         name:"Setting powder",            note:"Sets the base so powder can grip on top of it",    order:8,  cat:"Powder" },
+  { id:"contourpowder",  name:"Powder contour",            note:"Sculpts on top of the set base",                   order:9,  cat:"Powder" },
+  { id:"bronzerpowder",  name:"Powder bronzer",            note:"Warmth on top of the set base",                    order:9,  cat:"Powder" },
+  { id:"blushpowder",    name:"Powder blush",              note:"Color on top of the set base",                     order:10, cat:"Powder" },
+  { id:"highlighterpowder", name:"Powder highlighter",     note:"A sharper, more precise catchlight",               order:11, cat:"Powder" },
+  { id:"brows",          name:"Eyebrows",                  note:"Pencil, powder, or gel",                           order:12, cat:"Eyes" },
+  { id:"eyeshadow",      name:"Eyeshadow",                 note:"Base color on the lids",                           order:13, cat:"Eyes" },
+  { id:"eyeliner",       name:"Eyeliner",                  note:"Defines the eye shape",                            order:14, cat:"Eyes" },
+  { id:"mascara",        name:"Mascara",                   note:"Lengthens and lifts lashes",                       order:15, cat:"Eyes" },
+  { id:"lipliner",       name:"Lip liner",                 note:"Defines the shape and holds color",                order:16, cat:"Lips" },
+  { id:"lipstick",       name:"Lipstick / lip tint",       note:"The color payoff",                                 order:17, cat:"Lips" },
+  { id:"lipgloss",       name:"Lip gloss",                 note:"Shine on top",                                     order:18, cat:"Lips" },
+  { id:"settingspray",   name:"Setting spray",             note:"Melts everything together, softens harsh lines",  order:19, cat:"Set" },
+  { id:"fixingspray",    name:"Fixing spray",               note:"Locks the finished look in place for long wear",  order:20, cat:"Set" }
 ];
 const MAP = Object.fromEntries(MAKEUP_ITEMS.map(i => [i.id, i]));
-const CATS = ["Prep","Base","Contour & Cheeks","Eyes","Lips","Set"];
+const CATS = ["Prep","Cream","Powder","Eyes","Lips","Set"];
+
+// ---- Notes: not conflicts, just things worth knowing ----
+const NOTES = [
+  {
+    match: (s) => MAKEUP_ITEMS.some(i => i.cat === "Powder" && s.has(i.id)) && MAKEUP_ITEMS.some(i => i.cat === "Cream" && s.has(i.id)),
+    flag: (s) => MAKEUP_ITEMS.filter(i => i.cat === "Powder" && s.has(i.id)).map(i => i.id),
+    head: "Powder goes after every cream step, not mixed in with them.",
+    body: "Cream and liquid products blend best while the base underneath is still tacky. Powder needs a set, matte surface to grip, which is why setting powder and any powder cheek products come after all your cream products, never before."
+  },
+  {
+    match: (s) => s.has("settingspray") || s.has("fixingspray"),
+    flag: (s) => ["settingspray","fixingspray"].filter(id => s.has(id)),
+    head: "Setting spray and fixing spray do different jobs.",
+    body: "Setting spray melts everything together so there are no harsh lines between products. Fixing spray locks the finished look in place for long wear, whether it likes it or not. Use one, or both, in that order."
+  }
+];
 
 // ---- Beauty Shelf: curate later, same pattern as skincare's My Shelf ----
 const MY_PRODUCTS = [];
@@ -248,17 +278,34 @@ function renderPicker(){
   if(c) c.onclick = () => { sel.clear(); render(); };
 }
 
-function stepLI(it, idx){
+function stepLI(it, idx, flagged){
   return '<li class="step"><span class="num">'+(idx+1)+'</span><span>'+
     '<span class="nm">'+it.name+'</span>'+
+    (flagged.has(it.id) ? '<span class="flag">see note</span>' : '')+
     '<span class="nt">'+it.note+'</span></span></li>';
+}
+
+function activeNotes(){
+  return NOTES.filter(n => n.match(sel));
 }
 
 function renderRoutine(){
   const list = MAKEUP_ITEMS.filter(i => sel.has(i.id)).sort((a,b) => a.order - b.order);
-  let html = '<div class="card"><div class="chead">'+IC.brush+'<h2>Your routine</h2>'+
+  const notes = activeNotes();
+  const flagged = new Set();
+  notes.forEach(n => n.flag(sel).forEach(id => flagged.add(id)));
+
+  let html = "";
+  if(notes.length){
+    html += '<div class="notes">';
+    notes.forEach(n => {
+      html += '<div class="note">'+IC.info+'<div><b>'+n.head+'</b><p>'+n.body+'</p></div></div>';
+    });
+    html += '</div>';
+  }
+  html += '<div class="card"><div class="chead">'+IC.brush+'<h2>Your routine</h2>'+
     '<span class="count">'+list.length+' step'+(list.length!==1?'s':'')+'</span></div>'+
-    '<ol class="steps">'+list.map((it,i) => stepLI(it,i)).join("")+'</ol></div>';
+    '<ol class="steps">'+list.map((it,i) => stepLI(it,i,flagged)).join("")+'</ol></div>';
   return html;
 }
 
