@@ -67,11 +67,15 @@
   .clear svg{ width:14px; height:14px; }
 
   /* view toggle */
-  .toggle{ display:inline-flex; background:var(--surface); border:1px solid var(--line);
+  .toggle{ display:inline-flex; flex-wrap:wrap; background:var(--surface); border:1px solid var(--line);
     border-radius:999px; padding:4px; margin-bottom:22px; }
   .toggle button{ border:none; background:none; font-family:var(--disp); font-weight:500; font-size:14px;
-    color:var(--taupe); padding:8px 20px; border-radius:999px; cursor:pointer; transition:all .14s ease; }
+    color:var(--taupe); padding:8px 20px; border-radius:999px; cursor:pointer; transition:all .14s ease;
+    white-space:nowrap; }
   .toggle button[data-on="true"]{ background:var(--espresso); color:var(--cream); }
+  @media(max-width:480px){
+    .toggle button{ padding:8px 13px; font-size:12.5px; }
+  }
 
   .empty{ border:1px dashed var(--line); border-radius:20px; padding:56px 30px; text-align:center; }
   .empty .dot{ width:46px; height:18px; background:var(--lime);
@@ -174,6 +178,18 @@
   .jminus{ color:var(--clay); font-weight:600; margin-left:10px; }
   .jproducts{ font-size:12px; color:var(--taupe); margin-top:8px; }
   .jproducts.jnone{ font-style:italic; opacity:0.8; }
+
+  /* my shelf */
+  .myshelf-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:16px; }
+  .myshelf-item{ background:var(--card); border:1px solid var(--line); border-radius:20px;
+    padding:18px 16px 16px; display:flex; flex-direction:column; align-items:center; text-align:center; }
+  .myshelf-photo{ width:100%; height:150px; display:flex; align-items:flex-end; justify-content:center;
+    margin-bottom:14px; }
+  .myshelf-photo img{ max-width:100%; max-height:150px; object-fit:contain;
+    filter:drop-shadow(0 10px 10px rgba(37,39,43,0.16)); }
+  .myshelf-item .brand{ font-family:var(--disp); font-weight:600; font-size:10.5px; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--taupe); }
+  .myshelf-item .pname{ font-size:13.5px; font-weight:500; margin-top:3px; line-height:1.35; }
 </style>
 </head>
 <body>
@@ -288,6 +304,14 @@ const GOOD = [
     src:"Adapalene resists the degradation that hits other retinoids (Br. J. Dermatol. 1998)." }
 ];
 
+// ---- My Shelf: the real products, photographed ----
+const MY_PRODUCTS = [
+  { brand:"TIRTIR", name:"Milk Skin Toner", img:"products/tirtir-milk-toner.png" },
+  { brand:"Bioderma", name:"Sébium H2O", img:"products/bioderma-sebium-h2o.png" },
+  { brand:"Beauty of Joseon", name:"Glow Replenishing Rice Milk Toner", img:"products/boj-rice-milk-toner.png" },
+  { brand:"Anua", name:"Azelaic Acid 10% Serum", img:"products/anua-azelaic-serum.png" }
+];
+
 // ---- State ----
 const sel = new Set();
 let view = "daily";
@@ -346,7 +370,7 @@ function restore(){
   try{
     const data = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
     if(Array.isArray(data.sel)) data.sel.forEach(id => { if(MAP[id]) sel.add(id); });
-    if(data.view === "daily" || data.view === "weekly" || data.view === "journal") view = data.view;
+    if(["daily","weekly","journal","myshelf"].includes(data.view)) view = data.view;
     if(Array.isArray(data.journal)){
       journal = data.journal.filter(e => e && e.id && e.date && STATUS_ORDER.includes(e.status) && Array.isArray(e.products));
     }
@@ -547,6 +571,21 @@ function renderJournal(){
   return html;
 }
 
+function renderMyShelf(){
+  if(!MY_PRODUCTS.length){
+    return '<div class="empty"><div class="dot"></div><h3>Nothing on here yet</h3>'+
+      '<p>Tell me what you actually use and I’ll add the real bottle, cut out and all.</p></div>';
+  }
+  let html = '<p class="weeknote">The real bottles, not just categories. Everything I could find a clean photo for.</p>';
+  html += '<div class="myshelf-grid">';
+  MY_PRODUCTS.forEach(p => {
+    html += '<div class="myshelf-item"><div class="myshelf-photo"><img src="'+p.img+'" alt="'+p.brand+' '+p.name+'" loading="lazy" /></div>'+
+      '<span class="brand">'+p.brand+'</span><span class="pname">'+p.name+'</span></div>';
+  });
+  html += '</div>';
+  return html;
+}
+
 function render(){
   persist();
   renderPicker();
@@ -555,10 +594,13 @@ function render(){
   let html = '<div class="toggle">'+
     '<button data-v="daily" data-on="'+(view==="daily")+'">Daily</button>'+
     '<button data-v="weekly" data-on="'+(view==="weekly")+'">Weekly plan</button>'+
-    '<button data-v="journal" data-on="'+(view==="journal")+'">Journal</button></div>';
+    '<button data-v="journal" data-on="'+(view==="journal")+'">Journal</button>'+
+    '<button data-v="myshelf" data-on="'+(view==="myshelf")+'">My Shelf</button></div>';
 
   if(view === "journal"){
     html += renderJournal();
+  } else if(view === "myshelf"){
+    html += renderMyShelf();
   } else if(sel.size === 0){
     html += '<div class="empty"><div class="dot"></div><h3>Your shelf is empty</h3>'+
       '<p>Pick a few products on the left and your routine builds itself.</p></div>';
