@@ -130,12 +130,23 @@
   .msadd-icon{ font-family:var(--disp); font-size:26px; font-weight:400; line-height:1; color:var(--lime-deep); }
 
   .myshelf-own{ position:relative; }
-  .msdel, .msedit{ position:absolute; top:10px; background:rgba(255,255,255,0.88); border:none;
+  .msdel, .msedit, .msdelfin{ position:absolute; top:10px; background:rgba(255,255,255,0.88); border:none;
     border-radius:999px; padding:6px; cursor:pointer; color:var(--taupe); display:flex; z-index:2; }
-  .msdel{ right:10px; }
+  .msdel, .msdelfin{ right:10px; }
   .msedit{ left:10px; }
-  .msdel:hover, .msedit:hover{ color:var(--clay); }
-  .msdel svg, .msedit svg{ width:13px; height:13px; }
+  .msdel:hover, .msedit:hover, .msdelfin:hover{ color:var(--clay); }
+  .msdel svg, .msedit svg, .msdelfin svg{ width:13px; height:13px; }
+
+  .mark-finished{ margin-top:8px; font-family:var(--sans); font-size:11.5px; color:var(--taupe);
+    background:none; border:1px solid var(--line); border-radius:999px; padding:5px 12px; cursor:pointer; }
+  .mark-finished:hover{ color:var(--espresso); border-color:var(--espresso-soft); }
+  .myshelf-finished{ opacity:0.82; }
+  .repurchase{ display:flex; align-items:center; justify-content:center; gap:9px; margin-top:10px; }
+  .rpminus, .rpplus{ width:24px; height:24px; border-radius:999px; border:1px solid var(--line); background:#fff;
+    color:var(--espresso); font-family:var(--disp); font-size:14px; line-height:1; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; }
+  .rpminus:hover, .rpplus:hover{ border-color:var(--espresso-soft); }
+  .rpcount{ font-size:11px; color:var(--taupe); font-family:var(--sans); white-space:nowrap; }
 
   .myshelf-photo--own{ align-items:stretch; overflow:hidden; border-radius:14px; background:var(--surface); }
   .myshelf-photo--own img{ width:100%; height:100%; object-fit:cover; filter:none; }
@@ -246,6 +257,7 @@ const MY_PRODUCTS = [];
 const sel = new Set();
 let view = "routine";
 let myShelf = []; // { id, ts, name, photo:dataURL } - added locally by this visitor
+let finished = []; // { id, name, brand, photo, cutout, repurchases } - products used up, tracked locally
 let addingShelfItem = false;
 let editingId = null;
 let pendingPhoto = null;
@@ -261,7 +273,7 @@ function escapeHtml(s){
 // ---- Local persistence (no account, stays on this device) ----
 const STORE_KEY = "layer.makeup.v1";
 function persist(){
-  try{ localStorage.setItem(STORE_KEY, JSON.stringify({ sel:[...sel], view, myShelf })); }catch(e){}
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify({ sel:[...sel], view, myShelf, finished })); }catch(e){}
 }
 function restore(){
   try{
@@ -270,6 +282,9 @@ function restore(){
     if(["routine","myshelf"].includes(data.view)) view = data.view;
     if(Array.isArray(data.myShelf)){
       myShelf = data.myShelf.filter(p => p && p.id && p.name && p.photo);
+    }
+    if(Array.isArray(data.finished)){
+      finished = data.finished.filter(p => p && p.id && p.name && p.photo).map(p => ({ ...p, repurchases: Number(p.repurchases) || 0 }));
     }
   }catch(e){}
 }
@@ -445,6 +460,39 @@ function deleteMyShelfItem(id){
   render();
 }
 
+function isFinished(name, brand){
+  return finished.some(f => f.name === name && f.brand === brand);
+}
+function markAsFinished(key, source){
+  let name, brand, photo, cutout;
+  if(source === "own"){
+    const idx = myShelf.findIndex(p => p.id === key);
+    if(idx === -1) return;
+    ({ name, brand, photo, cutout } = myShelf[idx]);
+    myShelf.splice(idx, 1);
+  } else {
+    const item = MY_PRODUCTS.find(p => (p.brand+"|"+p.name) === key);
+    if(!item) return;
+    name = item.name; brand = item.brand; photo = item.img; cutout = true;
+  }
+  if(isFinished(name, brand)){ render(); return; }
+  finished.push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    name, brand, photo, cutout, repurchases: 0
+  });
+  render();
+}
+function deleteFinishedItem(id){
+  finished = finished.filter(p => p.id !== id);
+  render();
+}
+function bumpRepurchase(id, delta){
+  const item = finished.find(p => p.id === id);
+  if(!item) return;
+  item.repurchases = Math.max(0, (item.repurchases||0) + delta);
+  render();
+}
+
 function myShelfFormTile(){
   const photoInner = processingPhoto
     ? '<div class="msf-placeholder"><span class="msf-spin"></span></div>'
@@ -472,7 +520,9 @@ function renderMyShelf(){
     html += '<div class="myshelf-grid">';
     MY_PRODUCTS.forEach(p => {
       html += '<div class="myshelf-item"><div class="myshelf-photo"><img src="'+p.img+'" alt="'+p.brand+' '+p.name+'" loading="lazy" /></div>'+
-        '<span class="brand">'+p.brand+'</span><span class="pname">'+p.name+'</span></div>';
+        '<span class="brand">'+p.brand+'</span><span class="pname">'+p.name+'</span>'+
+        (isFinished(p.name, p.brand) ? '' : '<button class="mark-finished" data-key="'+escapeHtml(p.brand+"|"+p.name)+'" data-source="curated">Mark as finished</button>')+
+      '</div>';
     });
     html += '</div>';
     html += '<div class="shelf-divider"><div class="swipe"></div></div>';
@@ -488,12 +538,36 @@ function renderMyShelf(){
       '<div class="'+photoCls+'"><img src="'+p.photo+'" alt="'+escapeHtml(p.name)+'" /></div>'+
       (p.brand ? '<span class="brand">'+escapeHtml(p.brand)+'</span>' : '')+
       '<span class="pname">'+escapeHtml(p.name)+'</span>'+
+      '<button class="mark-finished" data-key="'+p.id+'" data-source="own">Mark as finished</button>'+
     '</div>';
   });
   html += addingShelfItem
     ? myShelfFormTile()
     : '<button class="myshelf-add" id="msaddbtn" type="button"><span class="msadd-icon">+</span><span>Add your own</span></button>';
   html += '</div>';
+
+  if(finished.length){
+    html += '<div class="shelf-divider"><div class="swipe"></div></div>';
+    html += '<div class="shelf-label">Finished</div>';
+    html += '<p class="lede" style="font-size:14px;max-width:56ch;margin-bottom:20px;">Empties, and how many times you have bought them again.</p>';
+    html += '<div class="myshelf-grid">';
+    finished.forEach(p => {
+      const photoCls = p.cutout ? "myshelf-photo" : "myshelf-photo myshelf-photo--own";
+      html += '<div class="myshelf-item myshelf-own myshelf-finished">'+
+        '<button class="msdelfin" data-id="'+p.id+'" aria-label="Remove">'+IC.trash+'</button>'+
+        '<div class="'+photoCls+'"><img src="'+p.photo+'" alt="'+escapeHtml(p.name)+'" /></div>'+
+        (p.brand ? '<span class="brand">'+escapeHtml(p.brand)+'</span>' : '')+
+        '<span class="pname">'+escapeHtml(p.name)+'</span>'+
+        '<div class="repurchase">'+
+          '<button class="rpminus" data-id="'+p.id+'" aria-label="Fewer repurchases">−</button>'+
+          '<span class="rpcount">Repurchased '+p.repurchases+'x</span>'+
+          '<button class="rpplus" data-id="'+p.id+'" aria-label="More repurchases">+</button>'+
+        '</div>'+
+      '</div>';
+    });
+    html += '</div>';
+  }
+
   return html;
 }
 
@@ -553,6 +627,10 @@ function render(){
     if(saveBtn) saveBtn.onclick = saveMyShelfItem;
     r.querySelectorAll(".msdel").forEach(b => b.onclick = () => deleteMyShelfItem(b.dataset.id));
     r.querySelectorAll(".msedit").forEach(b => b.onclick = () => editMyShelfItem(b.dataset.id));
+    r.querySelectorAll(".mark-finished").forEach(b => b.onclick = () => markAsFinished(b.dataset.key, b.dataset.source));
+    r.querySelectorAll(".msdelfin").forEach(b => b.onclick = () => deleteFinishedItem(b.dataset.id));
+    r.querySelectorAll(".rpplus").forEach(b => b.onclick = () => bumpRepurchase(b.dataset.id, 1));
+    r.querySelectorAll(".rpminus").forEach(b => b.onclick = () => bumpRepurchase(b.dataset.id, -1));
   }
 }
 
