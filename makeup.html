@@ -98,6 +98,10 @@
   .step .nm{ font-size:15px; font-weight:500; }
   .step .nt{ font-size:12.5px; display:block; margin-top:1px; color:var(--taupe); }
   .flag{ font-size:11px; font-weight:600; margin-left:7px; color:var(--clay); }
+  .step-products{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .step-product{ display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:500;
+    border-radius:999px; padding:3px 10px 3px 4px; background:var(--surface); color:var(--espresso-soft); }
+  .step-product img{ width:20px; height:20px; object-fit:contain; border-radius:50%; background:#fff; padding:2px; flex-shrink:0; }
 
   .notes{ display:flex; flex-direction:column; gap:11px; margin-bottom:22px; }
   .note{ border-radius:15px; padding:15px 17px; font-size:14px; display:flex; gap:12px; align-items:flex-start;
@@ -255,17 +259,17 @@ const NOTES = [
 
 // ---- Beauty Shelf: curate later, same pattern as skincare's My Shelf ----
 const MY_PRODUCTS = [
-  { brand:"Danessa Myricks", name:"Yummy Skin Blurring Balm Powder (Universal)", img:"products/danessa-blurring-balm-universal.png", cat:"Prep" },
-  { brand:"Huda Beauty", name:"Easy Blur Primer", img:"products/huda-easy-blur-primer.png", cat:"Prep" },
-  { brand:"Fenty Beauty", name:"Match Stix Contour Skinstick (Espresso)", img:"products/fenty-match-stix-espresso.png", cat:"Cream" },
-  { brand:"Huda Beauty", name:"Easy Bake Loose Setting Powder (Pound Cake)", img:"products/huda-easy-bake-pound-cake.png", cat:"Powder" },
-  { brand:"Fenty Beauty", name:"Sun Stalk'r Instant Warmth Bronzer (Coco Naughty)", img:"products/fenty-sunstalkr-bronzer-coco-naughty.png", cat:"Powder" },
-  { brand:"Charlotte Tilbury", name:"Airbrush Flawless Setting Spray", img:"products/ct-airbrush-flawless-setting-spray.png", cat:"Set", sub:"Fixing spray" },
-  { brand:"Charlotte Tilbury", name:"Airbrush Flawless Finish Powder (Tan)", img:"products/ct-airbrush-flawless-finish-tan.png", cat:"Powder" },
-  { brand:"Charlotte Tilbury", name:"Airbrush Flawless Finish Powder (Medium)", img:"products/ct-airbrush-flawless-finish-medium.png", cat:"Powder" },
-  { brand:"L'Oreal Paris", name:"Infallible 3-Second Setting Mist", img:"products/loreal-infallible-3sec-setting-mist.png", cat:"Set", sub:"Setting spray" },
-  { brand:"ONE/SIZE", name:"On 'Til Dawn Setting Spray", img:"products/onesize-on-til-dawn-setting-spray.png", cat:"Set", sub:"Setting spray" },
-  { brand:"Charlotte Tilbury", name:"Airbrush Flawless Matte Setting Spray", img:"products/ct-airbrush-flawless-matte-spray.png", cat:"Set", sub:"Setting spray" }
+  { brand:"Danessa Myricks", name:"Yummy Skin Blurring Balm Powder (Universal)", img:"products/danessa-blurring-balm-universal.png", cat:"Prep", link:"primer" },
+  { brand:"Huda Beauty", name:"Easy Blur Primer", img:"products/huda-easy-blur-primer.png", cat:"Prep", link:"primer" },
+  { brand:"Fenty Beauty", name:"Match Stix Contour Skinstick (Espresso)", img:"products/fenty-match-stix-espresso.png", cat:"Cream", link:"contourcream" },
+  { brand:"Huda Beauty", name:"Easy Bake Loose Setting Powder (Pound Cake)", img:"products/huda-easy-bake-pound-cake.png", cat:"Powder", link:"powder" },
+  { brand:"Fenty Beauty", name:"Sun Stalk'r Instant Warmth Bronzer (Coco Naughty)", img:"products/fenty-sunstalkr-bronzer-coco-naughty.png", cat:"Powder", link:"bronzerpowder" },
+  { brand:"Charlotte Tilbury", name:"Airbrush Flawless Setting Spray", img:"products/ct-airbrush-flawless-setting-spray.png", cat:"Set", sub:"Fixing spray", link:"fixingspray" },
+  { brand:"Charlotte Tilbury", name:"Airbrush Flawless Finish Powder (Tan)", img:"products/ct-airbrush-flawless-finish-tan.png", cat:"Powder", link:"powder" },
+  { brand:"Charlotte Tilbury", name:"Airbrush Flawless Finish Powder (Medium)", img:"products/ct-airbrush-flawless-finish-medium.png", cat:"Powder", link:"powder" },
+  { brand:"L'Oreal Paris", name:"Infallible 3-Second Setting Mist", img:"products/loreal-infallible-3sec-setting-mist.png", cat:"Set", sub:"Setting spray", link:"settingspray" },
+  { brand:"ONE/SIZE", name:"On 'Til Dawn Setting Spray", img:"products/onesize-on-til-dawn-setting-spray.png", cat:"Set", sub:"Setting spray", link:"settingspray" },
+  { brand:"Charlotte Tilbury", name:"Airbrush Flawless Matte Setting Spray", img:"products/ct-airbrush-flawless-matte-spray.png", cat:"Set", sub:"Setting spray", link:"settingspray" }
 ];
 
 // ---- State ----
@@ -280,6 +284,7 @@ let pendingCutout = false;
 let pendingName = "";
 let pendingBrand = "";
 let pendingCat = CATS[0];
+let pendingLink = "";
 let processingPhoto = false;
 
 function escapeHtml(s){
@@ -327,11 +332,25 @@ function renderPicker(){
   if(c) c.onclick = () => { sel.clear(); render(); };
 }
 
+function getLinkedProducts(id){
+  const curated = MY_PRODUCTS.filter(p => p.link === id).map(p => ({ img:p.img, brand:p.brand, name:p.name }));
+  const own = myShelf.filter(p => p.link === id).map(p => ({ img:p.photo, brand:p.brand, name:p.name }));
+  return [...curated, ...own];
+}
+
 function stepLI(it, idx, flagged){
+  const linked = getLinkedProducts(it.id);
+  const productsHtml = linked.length
+    ? '<div class="step-products">'+linked.map(p =>
+        '<span class="step-product"><img src="'+p.img+'" alt="" />'+(p.brand ? escapeHtml(p.brand)+' ' : '')+escapeHtml(p.name)+'</span>'
+      ).join('')+'</div>'
+    : '';
   return '<li class="step"><span class="num">'+(idx+1)+'</span><span>'+
     '<span class="nm">'+it.name+'</span>'+
     (flagged.has(it.id) ? '<span class="flag">see note</span>' : '')+
-    '<span class="nt">'+it.note+'</span></span></li>';
+    '<span class="nt">'+it.note+'</span>'+
+    productsHtml+
+    '</span></li>';
 }
 
 function activeNotes(){
@@ -447,6 +466,7 @@ function saveMyShelfItem(){
       item.photo = pendingPhoto;
       item.cutout = pendingCutout;
       item.cat = pendingCat;
+      item.link = pendingLink;
     }
   } else {
     myShelf.push({
@@ -456,10 +476,11 @@ function saveMyShelfItem(){
       brand: pendingBrand.trim(),
       photo: pendingPhoto,
       cutout: pendingCutout,
-      cat: pendingCat
+      cat: pendingCat,
+      link: pendingLink
     });
   }
-  addingShelfItem = false; editingId = null; pendingPhoto = null; pendingCutout = false; pendingName = ""; pendingBrand = ""; pendingCat = CATS[0];
+  addingShelfItem = false; editingId = null; pendingPhoto = null; pendingCutout = false; pendingName = ""; pendingBrand = ""; pendingCat = CATS[0]; pendingLink = "";
   render();
 }
 function editMyShelfItem(id){
@@ -472,6 +493,7 @@ function editMyShelfItem(id){
   pendingName = item.name;
   pendingBrand = item.brand || "";
   pendingCat = CATS.includes(item.cat) ? item.cat : CATS[0];
+  pendingLink = item.link || "";
   render();
 }
 function deleteMyShelfItem(id){
@@ -525,6 +547,11 @@ function myShelfFormTile(){
     '<input type="text" id="msfbrand" class="msf-name" placeholder="Brand (optional)" maxlength="40" value="'+escapeHtml(pendingBrand)+'" />'+
     '<input type="text" id="msfname" class="msf-name" placeholder="Product name" maxlength="60" value="'+escapeHtml(pendingName)+'" />'+
     '<select id="msfcat" class="msf-name">'+CATS.map(c => '<option value="'+c+'"'+(c===pendingCat?' selected':'')+'>'+c+'</option>').join('')+'</select>'+
+    '<select id="msflink" class="msf-name"><option value="">Not linked to a routine step</option>'+
+      CATS.map(cat => '<optgroup label="'+cat+'">'+
+        MAKEUP_ITEMS.filter(i => i.cat === cat).map(i => '<option value="'+i.id+'"'+(i.id===pendingLink?' selected':'')+'>'+i.name+'</option>').join('')+
+      '</optgroup>').join('')+
+    '</select>'+
     '<div class="msf-actions">'+
       '<button class="msf-cancel" id="msfcancel" type="button">Cancel</button>'+
       '<button class="msf-save" id="msfsave" type="button"'+((pendingPhoto && pendingName.trim() && !processingPhoto) ? '' : ' disabled')+'>'+(editingId ? 'Save changes' : 'Add to shelf')+'</button>'+
@@ -663,9 +690,9 @@ function render(){
 
   if(view === "myshelf"){
     const addBtn = document.getElementById("msaddbtn");
-    if(addBtn) addBtn.onclick = () => { addingShelfItem = true; editingId = null; pendingPhoto = null; pendingCutout = false; pendingName = ""; pendingBrand = ""; pendingCat = CATS[0]; render(); };
+    if(addBtn) addBtn.onclick = () => { addingShelfItem = true; editingId = null; pendingPhoto = null; pendingCutout = false; pendingName = ""; pendingBrand = ""; pendingCat = CATS[0]; pendingLink = ""; render(); };
     const cancelBtn = document.getElementById("msfcancel");
-    if(cancelBtn) cancelBtn.onclick = () => { addingShelfItem = false; editingId = null; pendingPhoto = null; pendingCutout = false; pendingName = ""; pendingBrand = ""; pendingCat = CATS[0]; render(); };
+    if(cancelBtn) cancelBtn.onclick = () => { addingShelfItem = false; editingId = null; pendingPhoto = null; pendingCutout = false; pendingName = ""; pendingBrand = ""; pendingCat = CATS[0]; pendingLink = ""; render(); };
     const fileInput = document.getElementById("msfile");
     const pickBtn = document.getElementById("msfpick");
     if(pickBtn && fileInput) pickBtn.onclick = () => fileInput.click();
@@ -692,6 +719,8 @@ function render(){
     if(brandInput) brandInput.oninput = (e) => { pendingBrand = e.target.value; };
     const catSelect = document.getElementById("msfcat");
     if(catSelect) catSelect.onchange = (e) => { pendingCat = e.target.value; };
+    const linkSelect = document.getElementById("msflink");
+    if(linkSelect) linkSelect.onchange = (e) => { pendingLink = e.target.value; };
     const saveBtn = document.getElementById("msfsave");
     if(saveBtn) saveBtn.onclick = saveMyShelfItem;
     r.querySelectorAll(".msdel").forEach(b => b.onclick = () => deleteMyShelfItem(b.dataset.id));
