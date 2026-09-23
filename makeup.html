@@ -56,6 +56,8 @@
   .picker h2{ font-family:var(--disp); font-weight:600; font-size:17px; margin:0 0 4px; }
   .picker .hint{ font-size:13px; color:var(--taupe); margin:0 0 18px; }
   .cat{ font-family:var(--disp); font-weight:500; font-size:13px; color:var(--taupe); margin:18px 2px 9px; }
+  .subcat{ font-family:var(--disp); font-weight:600; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--taupe); margin:14px 2px 10px; }
   .cat.first{ margin-top:0; }
   .pills{ display:flex; flex-wrap:wrap; gap:8px; }
   .pill{ border:1px solid var(--line); background:#fff; color:var(--espresso); border-radius:999px;
@@ -233,6 +235,7 @@ const MAKEUP_ITEMS = [
 ];
 const MAP = Object.fromEntries(MAKEUP_ITEMS.map(i => [i.id, i]));
 const CATS = ["Prep","Cream","Powder","Eyes","Lips","Set"];
+const SET_SUBS = ["Setting spray","Fixing spray"];
 
 // ---- Notes: not conflicts, just things worth knowing ----
 const NOTES = [
@@ -246,7 +249,7 @@ const NOTES = [
     match: (s) => s.has("settingspray") || s.has("fixingspray"),
     flag: (s) => ["settingspray","fixingspray"].filter(id => s.has(id)),
     head: "Setting spray and fixing spray do different jobs.",
-    body: "Setting spray melts everything together so there are no harsh lines between products. Fixing spray locks the finished look in place for long wear, whether it likes it or not. Use one, or both, in that order."
+    body: "Setting spray melts everything together so there are no harsh lines between products. Fixing spray locks the finished look in place for long wear, whether it likes it or not. Use one, or both, in that order. Heads up though, German beauty circles often swap these two names from their English meaning, so check what a product actually does rather than trusting the name on the bottle alone."
   }
 ];
 
@@ -257,12 +260,12 @@ const MY_PRODUCTS = [
   { brand:"Fenty Beauty", name:"Match Stix Contour Skinstick (Espresso)", img:"products/fenty-match-stix-espresso.png", cat:"Cream" },
   { brand:"Huda Beauty", name:"Easy Bake Loose Setting Powder (Pound Cake)", img:"products/huda-easy-bake-pound-cake.png", cat:"Powder" },
   { brand:"Fenty Beauty", name:"Sun Stalk'r Instant Warmth Bronzer (Coco Naughty)", img:"products/fenty-sunstalkr-bronzer-coco-naughty.png", cat:"Powder" },
-  { brand:"Charlotte Tilbury", name:"Airbrush Flawless Setting Spray", img:"products/ct-airbrush-flawless-setting-spray.png", cat:"Set" },
+  { brand:"Charlotte Tilbury", name:"Airbrush Flawless Setting Spray", img:"products/ct-airbrush-flawless-setting-spray.png", cat:"Set", sub:"Fixing spray" },
   { brand:"Charlotte Tilbury", name:"Airbrush Flawless Finish Powder (Tan)", img:"products/ct-airbrush-flawless-finish-tan.png", cat:"Powder" },
   { brand:"Charlotte Tilbury", name:"Airbrush Flawless Finish Powder (Medium)", img:"products/ct-airbrush-flawless-finish-medium.png", cat:"Powder" },
-  { brand:"L'Oreal Paris", name:"Infallible 3-Second Setting Mist", img:"products/loreal-infallible-3sec-setting-mist.png", cat:"Set" },
-  { brand:"ONE/SIZE", name:"On 'Til Dawn Setting Spray", img:"products/onesize-on-til-dawn-setting-spray.png", cat:"Set" },
-  { brand:"Charlotte Tilbury", name:"Airbrush Flawless Matte Setting Spray", img:"products/ct-airbrush-flawless-matte-spray.png", cat:"Set" }
+  { brand:"L'Oreal Paris", name:"Infallible 3-Second Setting Mist", img:"products/loreal-infallible-3sec-setting-mist.png", cat:"Set", sub:"Setting spray" },
+  { brand:"ONE/SIZE", name:"On 'Til Dawn Setting Spray", img:"products/onesize-on-til-dawn-setting-spray.png", cat:"Set", sub:"Setting spray" },
+  { brand:"Charlotte Tilbury", name:"Airbrush Flawless Matte Setting Spray", img:"products/ct-airbrush-flawless-matte-spray.png", cat:"Set", sub:"Setting spray" }
 ];
 
 // ---- State ----
@@ -532,20 +535,38 @@ function myShelfFormTile(){
 function renderMyShelf(){
   let html = '<p class="lede" style="font-size:14px;max-width:56ch;margin-bottom:20px;">Astrid’s picks below, and your own shelf underneath, which stays only on your own device.</p>';
 
+  const curatedTile = p => '<div class="myshelf-item"><div class="myshelf-photo"><img src="'+p.img+'" alt="'+p.brand+' '+p.name+'" loading="lazy" /></div>'+
+    '<span class="brand">'+p.brand+'</span><span class="pname">'+p.name+'</span>'+
+    (isFinished(p.name, p.brand) ? '' : '<button class="mark-finished" data-key="'+escapeHtml(p.brand+"|"+p.name)+'" data-source="curated">Mark as finished</button>')+
+  '</div>';
+
   if(MY_PRODUCTS.length){
     html += '<div class="shelf-label">On Astrid’s shelf</div>';
     CATS.forEach(cat => {
       const items = MY_PRODUCTS.filter(p => p.cat === cat);
       if(!items.length) return;
       html += '<div class="cat">'+cat+'</div>';
-      html += '<div class="myshelf-grid">';
-      items.forEach(p => {
-        html += '<div class="myshelf-item"><div class="myshelf-photo"><img src="'+p.img+'" alt="'+p.brand+' '+p.name+'" loading="lazy" /></div>'+
-          '<span class="brand">'+p.brand+'</span><span class="pname">'+p.name+'</span>'+
-          (isFinished(p.name, p.brand) ? '' : '<button class="mark-finished" data-key="'+escapeHtml(p.brand+"|"+p.name)+'" data-source="curated">Mark as finished</button>')+
-        '</div>';
-      });
-      html += '</div>';
+      if(cat === "Set"){
+        html += '<p class="weeknote" style="margin:-4px 0 14px;">Split by how they get used here, since setting spray and fixing spray get named differently depending on where you shop.</p>';
+        SET_SUBS.forEach(sub => {
+          const subItems = items.filter(p => p.sub === sub);
+          if(!subItems.length) return;
+          html += '<div class="subcat">'+sub+'</div>';
+          html += '<div class="myshelf-grid">';
+          subItems.forEach(p => { html += curatedTile(p); });
+          html += '</div>';
+        });
+        const noSub = items.filter(p => !SET_SUBS.includes(p.sub));
+        if(noSub.length){
+          html += '<div class="myshelf-grid">';
+          noSub.forEach(p => { html += curatedTile(p); });
+          html += '</div>';
+        }
+      } else {
+        html += '<div class="myshelf-grid">';
+        items.forEach(p => { html += curatedTile(p); });
+        html += '</div>';
+      }
     });
     html += '<div class="shelf-divider"><div class="swipe"></div></div>';
   }
