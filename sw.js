@@ -1,5 +1,5 @@
 // LAYER service worker - offline app shell + runtime caching for fonts
-const CACHE = "layer-v15";
+const CACHE = "layer-v16";
 const ASSETS = [
   "./",
   "./index.html",
@@ -14,7 +14,12 @@ const ASSETS = [
   "./products/boj-rice-milk-toner.png",
   "./products/anua-azelaic-serum.png",
   "./products/anua-heartleaf-cleanser.png",
-  "./products/sunozon-oil-control-spf50.png"
+  "./products/sunozon-oil-control-spf50.png",
+  "./products/danessa-blurring-balm-universal.png",
+  "./products/huda-easy-blur-primer.png",
+  "./products/fenty-match-stix-espresso.png",
+  "./products/huda-easy-bake-pound-cake.png",
+  "./products/fenty-sunstalkr-bronzer-coco-naughty.png"
 ];
 // Pages get the network first (so updates always show up); everything else is cache-first.
 const NETWORK_FIRST = ["./", "./index.html"];
