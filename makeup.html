@@ -249,7 +249,7 @@ const NOTES = [
     match: (s) => s.has("settingspray") || s.has("fixingspray"),
     flag: (s) => ["settingspray","fixingspray"].filter(id => s.has(id)),
     head: "Setting spray and fixing spray do different jobs.",
-    body: "Setting spray melts everything together so there are no harsh lines between products. Fixing spray locks the finished look in place for long wear, whether it likes it or not. Use one, or both, in that order. Heads up though, German beauty circles often swap these two names from their English meaning, so check what a product actually does rather than trusting the name on the bottle alone."
+    body: "Setting spray melts everything together so there are no harsh lines between products. Fixing spray locks the finished look in place for long wear, whether it likes it or not. Use one, or both, in that order. Heads up though: in English, it is the other way around, fixing spray is the one that blends everything together, and setting spray is the one that locks it in place so nothing moves. This shelf follows the German meaning, so check what a product actually does rather than trusting the name on the bottle."
   }
 ];
 
@@ -547,7 +547,7 @@ function renderMyShelf(){
       if(!items.length) return;
       html += '<div class="cat">'+cat+'</div>';
       if(cat === "Set"){
-        html += '<p class="weeknote" style="margin:-4px 0 14px;">Split by how they get used here, since setting spray and fixing spray get named differently depending on where you shop.</p>';
+        html += '<p class="weeknote" style="margin:-4px 0 14px;">Split by the German meaning here: setting spray melts everything together, fixing spray locks it in place. In English it is the other way around, fixing blends and setting locks, so check what a product actually does.</p>';
         SET_SUBS.forEach(sub => {
           const subItems = items.filter(p => p.sub === sub);
           if(!subItems.length) return;
