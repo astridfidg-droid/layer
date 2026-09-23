@@ -121,6 +121,12 @@
   .flag{ font-size:11px; font-weight:600; margin-left:7px; }
   .card.am .flag{ color:var(--clay); }
   .card.pm .flag{ color:var(--lime); }
+  .step-products{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .step-product{ display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:500;
+    border-radius:999px; padding:3px 10px 3px 4px; }
+  .step-product img{ width:20px; height:20px; object-fit:contain; border-radius:50%; background:#fff; padding:2px; flex-shrink:0; }
+  .card.am .step-product{ background:var(--surface); color:var(--espresso-soft); }
+  .card.pm .step-product{ background:rgba(234,235,232,0.1); color:var(--cream); }
 
   /* weekly */
   .weeknote{ font-size:14px; color:var(--espresso-soft); margin:0 0 20px; max-width:56ch; line-height:1.55; }
@@ -365,12 +371,12 @@ const GOOD = [
 
 // ---- My Shelf: the real products, photographed ----
 const MY_PRODUCTS = [
-  { brand:"TIRTIR", name:"Milk Skin Toner", img:"products/tirtir-milk-toner.png" },
-  { brand:"Bioderma", name:"Sébium H2O", img:"products/bioderma-sebium-h2o.png" },
-  { brand:"Beauty of Joseon", name:"Glow Replenishing Rice Milk Toner", img:"products/boj-rice-milk-toner.png" },
-  { brand:"Anua", name:"Azelaic Acid 10% Serum", img:"products/anua-azelaic-serum.png" },
-  { brand:"Anua", name:"Heartleaf Quercetinol Pore Deep Cleansing Foam", img:"products/anua-heartleaf-cleanser.png" },
-  { brand:"Sunozon", name:"Oil Control Sonnenfluid LSF 50", img:"products/sunozon-oil-control-spf50.png" }
+  { brand:"TIRTIR", name:"Milk Skin Toner", img:"products/tirtir-milk-toner.png", link:"essence" },
+  { brand:"Bioderma", name:"Sébium H2O", img:"products/bioderma-sebium-h2o.png", link:"cleanser" },
+  { brand:"Beauty of Joseon", name:"Glow Replenishing Rice Milk Toner", img:"products/boj-rice-milk-toner.png", link:"essence" },
+  { brand:"Anua", name:"Azelaic Acid 10% Serum", img:"products/anua-azelaic-serum.png", link:"azelaic" },
+  { brand:"Anua", name:"Heartleaf Quercetinol Pore Deep Cleansing Foam", img:"products/anua-heartleaf-cleanser.png", link:"cleanser" },
+  { brand:"Sunozon", name:"Oil Control Sonnenfluid LSF 50", img:"products/sunozon-oil-control-spf50.png", link:"spf" }
 ];
 
 // ---- State ----
@@ -385,6 +391,7 @@ let pendingPhoto = null;
 let pendingCutout = false;
 let pendingName = "";
 let pendingBrand = "";
+let pendingLink = "";
 let processingPhoto = false;
 
 // ---- Journal setup ----
@@ -504,11 +511,25 @@ function renderPicker(){
   if(c) c.onclick = () => { sel.clear(); render(); };
 }
 
+function getLinkedProducts(id){
+  const curated = MY_PRODUCTS.filter(p => p.link === id).map(p => ({ img:p.img, brand:p.brand, name:p.name }));
+  const own = myShelf.filter(p => p.link === id).map(p => ({ img:p.photo, brand:p.brand, name:p.name }));
+  return [...curated, ...own];
+}
+
 function stepLI(it, idx, flagged){
+  const linked = getLinkedProducts(it.id);
+  const productsHtml = linked.length
+    ? '<div class="step-products">'+linked.map(p =>
+        '<span class="step-product"><img src="'+p.img+'" alt="" />'+(p.brand ? escapeHtml(p.brand)+' ' : '')+escapeHtml(p.name)+'</span>'
+      ).join('')+'</div>'
+    : '';
   return '<li class="step"><span class="num">'+(idx+1)+'</span><span>'+
     '<span class="nm">'+it.name+'</span>'+
     (flagged.has(it.id) ? '<span class="flag">see note</span>' : '')+
-    '<span class="nt">'+it.note+'</span></span></li>';
+    '<span class="nt">'+it.note+'</span>'+
+    productsHtml+
+    '</span></li>';
 }
 
 function renderDaily(){
@@ -735,6 +756,7 @@ function saveMyShelfItem(){
       item.brand = pendingBrand.trim();
       item.photo = pendingPhoto;
       item.cutout = pendingCutout;
+      item.link = pendingLink;
     }
   } else {
     myShelf.push({
@@ -743,10 +765,11 @@ function saveMyShelfItem(){
       name: pendingName.trim(),
       brand: pendingBrand.trim(),
       photo: pendingPhoto,
-      cutout: pendingCutout
+      cutout: pendingCutout,
+      link: pendingLink
     });
   }
-  addingShelfItem = false; editingId = null; pendingPhoto = null; pendingCutout = false; pendingName = ""; pendingBrand = "";
+  addingShelfItem = false; editingId = null; pendingPhoto = null; pendingCutout = false; pendingName = ""; pendingBrand = ""; pendingLink = "";
   render();
 }
 function editMyShelfItem(id){
@@ -758,6 +781,7 @@ function editMyShelfItem(id){
   pendingCutout = item.cutout;
   pendingName = item.name;
   pendingBrand = item.brand || "";
+  pendingLink = item.link || "";
   render();
 }
 function deleteMyShelfItem(id){
@@ -810,6 +834,11 @@ function myShelfFormTile(){
       (processingPhoto ? 'Cutting out background…' : (pendingPhoto ? 'Change photo' : 'Choose photo'))+'</button>'+
     '<input type="text" id="msfbrand" class="msf-name" placeholder="Brand (optional)" maxlength="40" value="'+escapeHtml(pendingBrand)+'" />'+
     '<input type="text" id="msfname" class="msf-name" placeholder="Product name" maxlength="60" value="'+escapeHtml(pendingName)+'" />'+
+    '<select id="msflink" class="msf-name"><option value="">Not linked to a routine step</option>'+
+      CATS.map(cat => '<optgroup label="'+cat+'">'+
+        INGREDIENTS.filter(i => i.cat === cat).map(i => '<option value="'+i.id+'"'+(i.id===pendingLink?' selected':'')+'>'+i.name+'</option>').join('')+
+      '</optgroup>').join('')+
+    '</select>'+
     '<div class="msf-actions">'+
       '<button class="msf-cancel" id="msfcancel" type="button">Cancel</button>'+
       '<button class="msf-save" id="msfsave" type="button"'+((pendingPhoto && pendingName.trim() && !processingPhoto) ? '' : ' disabled')+'>'+(editingId ? 'Save changes' : 'Add to shelf')+'</button>'+
@@ -916,9 +945,9 @@ function render(){
 
   if(view === "myshelf"){
     const addBtn = document.getElementById("msaddbtn");
-    if(addBtn) addBtn.onclick = () => { addingShelfItem = true; editingId = null; pendingPhoto = null; pendingCutout = false; pendingName = ""; pendingBrand = ""; render(); };
+    if(addBtn) addBtn.onclick = () => { addingShelfItem = true; editingId = null; pendingPhoto = null; pendingCutout = false; pendingName = ""; pendingBrand = ""; pendingLink = ""; render(); };
     const cancelBtn = document.getElementById("msfcancel");
-    if(cancelBtn) cancelBtn.onclick = () => { addingShelfItem = false; editingId = null; pendingPhoto = null; pendingCutout = false; pendingName = ""; pendingBrand = ""; render(); };
+    if(cancelBtn) cancelBtn.onclick = () => { addingShelfItem = false; editingId = null; pendingPhoto = null; pendingCutout = false; pendingName = ""; pendingBrand = ""; pendingLink = ""; render(); };
     const fileInput = document.getElementById("msfile");
     const pickBtn = document.getElementById("msfpick");
     if(pickBtn && fileInput) pickBtn.onclick = () => fileInput.click();
@@ -943,6 +972,8 @@ function render(){
     };
     const brandInput = document.getElementById("msfbrand");
     if(brandInput) brandInput.oninput = (e) => { pendingBrand = e.target.value; };
+    const linkSelect = document.getElementById("msflink");
+    if(linkSelect) linkSelect.onchange = (e) => { pendingLink = e.target.value; };
     const saveBtn = document.getElementById("msfsave");
     if(saveBtn) saveBtn.onclick = saveMyShelfItem;
     r.querySelectorAll(".msdel").forEach(b => b.onclick = () => deleteMyShelfItem(b.dataset.id));

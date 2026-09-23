@@ -1,5 +1,5 @@
 // LAYER service worker - offline app shell + runtime caching for fonts
-const CACHE = "layer-v20";
+const CACHE = "layer-v21";
 const ASSETS = [
   "./",
   "./index.html",
