@@ -252,11 +252,11 @@ const NOTES = [
 
 // ---- Beauty Shelf: curate later, same pattern as skincare's My Shelf ----
 const MY_PRODUCTS = [
-  { brand:"Danessa Myricks", name:"Yummy Skin Blurring Balm Powder (Universal)", img:"products/danessa-blurring-balm-universal.png" },
-  { brand:"Huda Beauty", name:"Easy Blur Primer", img:"products/huda-easy-blur-primer.png" },
-  { brand:"Fenty Beauty", name:"Match Stix Contour Skinstick (Espresso)", img:"products/fenty-match-stix-espresso.png" },
-  { brand:"Huda Beauty", name:"Easy Bake Loose Setting Powder (Pound Cake)", img:"products/huda-easy-bake-pound-cake.png" },
-  { brand:"Fenty Beauty", name:"Sun Stalk'r Instant Warmth Bronzer (Coco Naughty)", img:"products/fenty-sunstalkr-bronzer-coco-naughty.png" }
+  { brand:"Danessa Myricks", name:"Yummy Skin Blurring Balm Powder (Universal)", img:"products/danessa-blurring-balm-universal.png", cat:"Prep" },
+  { brand:"Huda Beauty", name:"Easy Blur Primer", img:"products/huda-easy-blur-primer.png", cat:"Prep" },
+  { brand:"Fenty Beauty", name:"Match Stix Contour Skinstick (Espresso)", img:"products/fenty-match-stix-espresso.png", cat:"Cream" },
+  { brand:"Huda Beauty", name:"Easy Bake Loose Setting Powder (Pound Cake)", img:"products/huda-easy-bake-pound-cake.png", cat:"Powder" },
+  { brand:"Fenty Beauty", name:"Sun Stalk'r Instant Warmth Bronzer (Coco Naughty)", img:"products/fenty-sunstalkr-bronzer-coco-naughty.png", cat:"Powder" }
 ];
 
 // ---- State ----
@@ -270,6 +270,7 @@ let pendingPhoto = null;
 let pendingCutout = false;
 let pendingName = "";
 let pendingBrand = "";
+let pendingCat = CATS[0];
 let processingPhoto = false;
 
 function escapeHtml(s){
@@ -436,6 +437,7 @@ function saveMyShelfItem(){
       item.brand = pendingBrand.trim();
       item.photo = pendingPhoto;
       item.cutout = pendingCutout;
+      item.cat = pendingCat;
     }
   } else {
     myShelf.push({
@@ -444,10 +446,11 @@ function saveMyShelfItem(){
       name: pendingName.trim(),
       brand: pendingBrand.trim(),
       photo: pendingPhoto,
-      cutout: pendingCutout
+      cutout: pendingCutout,
+      cat: pendingCat
     });
   }
-  addingShelfItem = false; editingId = null; pendingPhoto = null; pendingCutout = false; pendingName = ""; pendingBrand = "";
+  addingShelfItem = false; editingId = null; pendingPhoto = null; pendingCutout = false; pendingName = ""; pendingBrand = ""; pendingCat = CATS[0];
   render();
 }
 function editMyShelfItem(id){
@@ -459,6 +462,7 @@ function editMyShelfItem(id){
   pendingCutout = item.cutout;
   pendingName = item.name;
   pendingBrand = item.brand || "";
+  pendingCat = CATS.includes(item.cat) ? item.cat : CATS[0];
   render();
 }
 function deleteMyShelfItem(id){
@@ -511,6 +515,7 @@ function myShelfFormTile(){
       (processingPhoto ? 'Cutting out background…' : (pendingPhoto ? 'Change photo' : 'Choose photo'))+'</button>'+
     '<input type="text" id="msfbrand" class="msf-name" placeholder="Brand (optional)" maxlength="40" value="'+escapeHtml(pendingBrand)+'" />'+
     '<input type="text" id="msfname" class="msf-name" placeholder="Product name" maxlength="60" value="'+escapeHtml(pendingName)+'" />'+
+    '<select id="msfcat" class="msf-name">'+CATS.map(c => '<option value="'+c+'"'+(c===pendingCat?' selected':'')+'>'+c+'</option>').join('')+'</select>'+
     '<div class="msf-actions">'+
       '<button class="msf-cancel" id="msfcancel" type="button">Cancel</button>'+
       '<button class="msf-save" id="msfsave" type="button"'+((pendingPhoto && pendingName.trim() && !processingPhoto) ? '' : ' disabled')+'>'+(editingId ? 'Save changes' : 'Add to shelf')+'</button>'+
@@ -523,30 +528,59 @@ function renderMyShelf(){
 
   if(MY_PRODUCTS.length){
     html += '<div class="shelf-label">On Astrid’s shelf</div>';
-    html += '<div class="myshelf-grid">';
-    MY_PRODUCTS.forEach(p => {
-      html += '<div class="myshelf-item"><div class="myshelf-photo"><img src="'+p.img+'" alt="'+p.brand+' '+p.name+'" loading="lazy" /></div>'+
-        '<span class="brand">'+p.brand+'</span><span class="pname">'+p.name+'</span>'+
-        (isFinished(p.name, p.brand) ? '' : '<button class="mark-finished" data-key="'+escapeHtml(p.brand+"|"+p.name)+'" data-source="curated">Mark as finished</button>')+
-      '</div>';
+    CATS.forEach(cat => {
+      const items = MY_PRODUCTS.filter(p => p.cat === cat);
+      if(!items.length) return;
+      html += '<div class="cat">'+cat+'</div>';
+      html += '<div class="myshelf-grid">';
+      items.forEach(p => {
+        html += '<div class="myshelf-item"><div class="myshelf-photo"><img src="'+p.img+'" alt="'+p.brand+' '+p.name+'" loading="lazy" /></div>'+
+          '<span class="brand">'+p.brand+'</span><span class="pname">'+p.name+'</span>'+
+          (isFinished(p.name, p.brand) ? '' : '<button class="mark-finished" data-key="'+escapeHtml(p.brand+"|"+p.name)+'" data-source="curated">Mark as finished</button>')+
+        '</div>';
+      });
+      html += '</div>';
     });
-    html += '</div>';
     html += '<div class="shelf-divider"><div class="swipe"></div></div>';
   }
 
   html += '<div class="shelf-label">My own shelf</div>';
-  html += '<div class="myshelf-grid">';
-  myShelf.forEach(p => {
-    const photoCls = p.cutout ? "myshelf-photo" : "myshelf-photo myshelf-photo--own";
-    html += '<div class="myshelf-item myshelf-own">'+
-      '<button class="msedit" data-id="'+p.id+'" aria-label="Edit">'+IC.edit+'</button>'+
-      '<button class="msdel" data-id="'+p.id+'" aria-label="Remove">'+IC.trash+'</button>'+
-      '<div class="'+photoCls+'"><img src="'+p.photo+'" alt="'+escapeHtml(p.name)+'" /></div>'+
-      (p.brand ? '<span class="brand">'+escapeHtml(p.brand)+'</span>' : '')+
-      '<span class="pname">'+escapeHtml(p.name)+'</span>'+
-      '<button class="mark-finished" data-key="'+p.id+'" data-source="own">Mark as finished</button>'+
-    '</div>';
+  CATS.forEach(cat => {
+    const items = myShelf.filter(p => p.cat === cat);
+    if(!items.length) return;
+    html += '<div class="cat">'+cat+'</div>';
+    html += '<div class="myshelf-grid">';
+    items.forEach(p => {
+      const photoCls = p.cutout ? "myshelf-photo" : "myshelf-photo myshelf-photo--own";
+      html += '<div class="myshelf-item myshelf-own">'+
+        '<button class="msedit" data-id="'+p.id+'" aria-label="Edit">'+IC.edit+'</button>'+
+        '<button class="msdel" data-id="'+p.id+'" aria-label="Remove">'+IC.trash+'</button>'+
+        '<div class="'+photoCls+'"><img src="'+p.photo+'" alt="'+escapeHtml(p.name)+'" /></div>'+
+        (p.brand ? '<span class="brand">'+escapeHtml(p.brand)+'</span>' : '')+
+        '<span class="pname">'+escapeHtml(p.name)+'</span>'+
+        '<button class="mark-finished" data-key="'+p.id+'" data-source="own">Mark as finished</button>'+
+      '</div>';
+    });
+    html += '</div>';
   });
+  const uncategorized = myShelf.filter(p => !CATS.includes(p.cat));
+  if(uncategorized.length){
+    html += '<div class="cat">Other</div>';
+    html += '<div class="myshelf-grid">';
+    uncategorized.forEach(p => {
+      const photoCls = p.cutout ? "myshelf-photo" : "myshelf-photo myshelf-photo--own";
+      html += '<div class="myshelf-item myshelf-own">'+
+        '<button class="msedit" data-id="'+p.id+'" aria-label="Edit">'+IC.edit+'</button>'+
+        '<button class="msdel" data-id="'+p.id+'" aria-label="Remove">'+IC.trash+'</button>'+
+        '<div class="'+photoCls+'"><img src="'+p.photo+'" alt="'+escapeHtml(p.name)+'" /></div>'+
+        (p.brand ? '<span class="brand">'+escapeHtml(p.brand)+'</span>' : '')+
+        '<span class="pname">'+escapeHtml(p.name)+'</span>'+
+        '<button class="mark-finished" data-key="'+p.id+'" data-source="own">Mark as finished</button>'+
+      '</div>';
+    });
+    html += '</div>';
+  }
+  html += '<div class="myshelf-grid">';
   html += addingShelfItem
     ? myShelfFormTile()
     : '<button class="myshelf-add" id="msaddbtn" type="button"><span class="msadd-icon">+</span><span>Add your own</span></button>';
@@ -602,9 +636,9 @@ function render(){
 
   if(view === "myshelf"){
     const addBtn = document.getElementById("msaddbtn");
-    if(addBtn) addBtn.onclick = () => { addingShelfItem = true; editingId = null; pendingPhoto = null; pendingCutout = false; pendingName = ""; pendingBrand = ""; render(); };
+    if(addBtn) addBtn.onclick = () => { addingShelfItem = true; editingId = null; pendingPhoto = null; pendingCutout = false; pendingName = ""; pendingBrand = ""; pendingCat = CATS[0]; render(); };
     const cancelBtn = document.getElementById("msfcancel");
-    if(cancelBtn) cancelBtn.onclick = () => { addingShelfItem = false; editingId = null; pendingPhoto = null; pendingCutout = false; pendingName = ""; pendingBrand = ""; render(); };
+    if(cancelBtn) cancelBtn.onclick = () => { addingShelfItem = false; editingId = null; pendingPhoto = null; pendingCutout = false; pendingName = ""; pendingBrand = ""; pendingCat = CATS[0]; render(); };
     const fileInput = document.getElementById("msfile");
     const pickBtn = document.getElementById("msfpick");
     if(pickBtn && fileInput) pickBtn.onclick = () => fileInput.click();
@@ -629,6 +663,8 @@ function render(){
     };
     const brandInput = document.getElementById("msfbrand");
     if(brandInput) brandInput.oninput = (e) => { pendingBrand = e.target.value; };
+    const catSelect = document.getElementById("msfcat");
+    if(catSelect) catSelect.onchange = (e) => { pendingCat = e.target.value; };
     const saveBtn = document.getElementById("msfsave");
     if(saveBtn) saveBtn.onclick = saveMyShelfItem;
     r.querySelectorAll(".msdel").forEach(b => b.onclick = () => deleteMyShelfItem(b.dataset.id));
