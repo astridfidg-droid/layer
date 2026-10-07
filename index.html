@@ -20,6 +20,7 @@
 <style>
   :root{
     color-scheme:light;
+    --radius:3px;
     --paper:#C0C2BE; --paper-2:#CBCDC8; --ink:#221E1F; --ink-soft:#54504F;
     --muted:#74726D; --rule:#AAACA6; --rule-strong:#8F918B;
     --bordeaux:#78123A; --wine:#3A0A1E; --cream:#EFE1E6; --rose:#CB90A6;
@@ -333,6 +334,67 @@
     .myshelf-photo img, .myshelf-photo--own.myshelf-photo--cut img{ filter:drop-shadow(0 10px 10px rgba(0,0,0,0.5)); }
   }
 
+  /* shelf spread: an editorial page built from the saved shelf */
+  body:has(#results .toggle button[data-v="spread"][data-on="true"]) .col-picker{ display:none; }
+  body:has(#results .toggle button[data-v="spread"][data-on="true"]) .grid{ grid-template-columns:minmax(0,1fr); }
+  body:has(#results .toggle button[data-v="spread"][data-on="true"]) .col + .col{ margin-top:0; }
+  .section-head.sm{ margin-bottom:18px; }
+  .section-head.sm h2{ font-size:24px; }
+  .sp-dateline{ display:flex; justify-content:space-between; gap:16px; padding:9px 0;
+    border-top:1px solid var(--ink); border-bottom:1px solid var(--rule-strong);
+    font-size:10.5px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-soft); }
+  @media(max-width:420px){ .sp-loc{ display:none; } .sp-dateline{ font-size:9.5px; letter-spacing:.14em; } }
+  .sp-title{ font-family:var(--serif); font-weight:400; font-size:clamp(46px,8vw,92px); line-height:.98;
+    letter-spacing:-.028em; margin:26px 0 0; }
+  .sp-title em{ font-style:italic; font-weight:300; }
+  .sp-stats{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); margin:32px 0 48px;
+    border-top:1px solid var(--rule-strong); border-bottom:1px solid var(--rule-strong); }
+  .sp-stat{ padding:20px 0 18px 22px; border-left:1px solid var(--rule); }
+  .sp-stat:first-child{ padding-left:0; border-left:0; }
+  .sp-stat b{ display:block; font-family:var(--serif); font-weight:300; font-size:clamp(40px,6vw,66px);
+    line-height:1; color:var(--accent-ink); }
+  .sp-stat span{ display:block; margin-top:8px; font-size:10.5px; font-weight:600; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--muted); }
+  .sp-body{ display:grid; grid-template-columns:minmax(0,1fr); gap:52px; }
+  @container (min-width:760px){ .sp-body{ grid-template-columns:minmax(0,1fr) 280px; gap:60px; } }
+  .sp-main > section + section{ margin-top:52px; }
+  .sp-list{ list-style:none; margin:0; padding:0; }
+  .sp-item{ display:flex; align-items:baseline; gap:18px; padding:18px 0; border-top:1px solid var(--rule); }
+  .sp-item:first-child{ border-top-color:var(--rule-strong); }
+  .sp-no{ font-family:var(--serif); font-weight:300; font-size:24px; line-height:1; width:34px; flex-shrink:0; color:var(--accent-ink); }
+  .sp-item > span:not(.sp-no):not(.sp-side){ min-width:0; }
+  .sp-brand{ display:block; font-size:10px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+  .sp-name{ display:block; font-family:var(--serif); font-size:22px; line-height:1.25; letter-spacing:-.005em; margin-top:3px; }
+  .sp-meta{ display:block; font-size:12.5px; color:var(--muted); margin-top:6px; }
+  .sp-side{ margin-left:auto; text-align:right; flex-shrink:0; }
+  .sp-verdict{ display:inline-block; font-size:10px; font-weight:600; letter-spacing:.14em; text-transform:uppercase;
+    padding:4px 10px; border-radius:999px; border:1px solid var(--rule); color:var(--muted); white-space:nowrap; }
+  .sp-verdict.again{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+  .sp-void{ text-align:center; padding:56px 20px 60px; border-top:1px solid var(--rule-strong); border-bottom:1px solid var(--rule); }
+  .sp-void-rule{ display:block; width:56px; height:1px; background:var(--accent); margin:0 auto 26px; }
+  .sp-void h3{ font-family:var(--serif); font-weight:400; font-size:clamp(30px,4.4vw,42px); line-height:1.1;
+    letter-spacing:-.015em; margin:0 0 12px; }
+  .sp-void p{ font-family:var(--sans); font-size:14.5px; line-height:1.55; color:var(--muted); margin:0 auto; }
+  .sp-date{ display:block; margin-top:7px; font-family:var(--serif); font-style:italic; font-size:13px; color:var(--muted); }
+  .sp-empty{ margin:0; padding:18px 0; border-top:1px solid var(--rule-strong); font-family:var(--serif);
+    font-style:italic; font-size:16px; line-height:1.5; color:var(--muted); }
+  .sp-hint{ margin:12px 0 0; font-family:var(--serif); font-style:italic; font-size:13px; color:var(--muted); }
+  .sp-rail > section + section{ margin-top:44px; }
+  .sp-rail h3{ margin:0 0 14px; padding-top:12px; border-top:1px solid var(--ink); font-size:10.5px; font-weight:600;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--ink-soft); }
+  .sp-top{ list-style:none; margin:0; padding:0; }
+  .sp-top li{ display:flex; align-items:baseline; gap:14px; padding:13px 0; border-top:1px solid var(--rule); }
+  .sp-top li:first-child{ border-top:0; padding-top:2px; }
+  .sp-top .n{ font-family:var(--serif); font-weight:300; font-size:28px; line-height:1; width:24px; flex-shrink:0; color:var(--accent-ink); }
+  .sp-top .t{ font-family:var(--serif); font-size:17px; line-height:1.3; min-width:0; }
+  .sp-top .t small{ display:block; font-family:var(--sans); font-size:10px; font-weight:600; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:2px; }
+  .sp-top .c{ margin-left:auto; flex-shrink:0; font-size:12px; font-weight:600; color:var(--accent-ink); }
+  .sp-note{ display:block; width:100%; min-height:160px; resize:vertical; font-family:var(--serif); font-size:15.5px;
+    line-height:1.55; color:var(--ink); background:var(--paper-2); border:1px solid var(--rule-strong);
+    border-radius:var(--radius); padding:12px 14px; }
+  .sp-note:focus{ outline:2px solid var(--accent-ink); outline-offset:1px; }
+
   /* departments / section headings that follow the active view */
   body:has(#results .toggle button[data-v="daily"][data-on="true"]) .section-head.sec-view[data-for="daily"]{ display:flex; }
   body:has(#results .toggle button[data-v="weekly"][data-on="true"]) .section-head.sec-view[data-for="weekly"]{ display:flex; }
@@ -493,6 +555,7 @@ let view = "daily";
 let journal = []; // { id, ts, date, status, note, products:[ids] }
 let myShelf = []; // { id, ts, name, brand, photo:dataURL } - added locally by this visitor
 let finished = []; // { id, name, brand, photo, cutout, repurchases } - products used up, tracked locally
+let shelfNote = ""; // free text on the Shelf Spread, saved with everything else
 let addingShelfItem = false;
 let editingId = null;
 let pendingPhoto = null;
@@ -549,13 +612,13 @@ function deleteJournalEntry(id){
 // ---- Local persistence (no account, stays on this device) ----
 const STORE_KEY = "layer.shelf.v1";
 function persist(){
-  try{ localStorage.setItem(STORE_KEY, JSON.stringify({ sel:[...sel], view, journal, myShelf, finished })); }catch(e){}
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify({ sel:[...sel], view, journal, myShelf, finished, shelfNote })); }catch(e){}
 }
 function restore(){
   try{
     const data = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
     if(Array.isArray(data.sel)) data.sel.forEach(id => { if(MAP[id]) sel.add(id); });
-    if(["daily","weekly","journal","myshelf"].includes(data.view)) view = data.view;
+    if(["daily","weekly","journal","myshelf","spread"].includes(data.view)) view = data.view;
     if(Array.isArray(data.journal)){
       journal = data.journal.filter(e => e && e.id && e.date && STATUS_ORDER.includes(e.status) && Array.isArray(e.products));
     }
@@ -565,6 +628,7 @@ function restore(){
     if(Array.isArray(data.finished)){
       finished = data.finished.filter(p => p && p.id && p.name && p.photo).map(p => ({ ...p, repurchases: Number(p.repurchases) || 0 }));
     }
+    if(typeof data.shelfNote === "string") shelfNote = data.shelfNote;
   }catch(e){}
 }
 
@@ -1013,6 +1077,74 @@ function renderMyShelf(){
   return html;
 }
 
+// ---- Shelf Spread: an editorial read-out of what is already saved ----
+// finished items carry no date, so it is read back from the timestamp their id was minted with.
+function finishedTs(f){
+  const t = parseInt(String(f.id).slice(0, 8), 36);
+  return (t > 1.5e12 && t < 4.1e12) ? t : null;
+}
+function rebuysFor(p){
+  const f = finished.find(x => x.name === p.name && x.brand === p.brand);
+  return f ? f.repurchases : 0;
+}
+function spreadDate(t){
+  const d = new Date(t);
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString("en-US", sameYear ? { month:"short", day:"numeric" } : { month:"short", day:"numeric", year:"numeric" });
+}
+function renderSpread(){
+  const month = new Date().toLocaleDateString("en-US", { month:"long", year:"numeric" });
+  const boughtAgain = finished.filter(f => f.repurchases > 0).length;
+  const stat = (n, label) => '<div class="sp-stat"><b>'+n+'</b><span>'+label+'</span></div>';
+  const heading = (no, title) => '<div class="section-head sm"><span class="sec-no">'+no+'</span><h2>'+title+'</h2><span class="sec-rule"></span></div>';
+
+  const rotation = myShelf.map((p, i) => {
+    const step = MAP[p.link];
+    const n = rebuysFor(p);
+    const meta = [step ? step.cat+" · "+step.name : "", n > 0 ? "Rebought "+n+"x" : "Not rebought yet"].filter(Boolean).join(" · ");
+    return '<li class="sp-item"><span class="sp-no">'+String(i+1).padStart(2,"0")+'</span><span>'+
+      (p.brand ? '<span class="sp-brand">'+escapeHtml(p.brand)+'</span>' : '')+
+      '<span class="sp-name">'+escapeHtml(p.name)+'</span>'+
+      '<span class="sp-meta">'+escapeHtml(meta)+'</span></span></li>';
+  }).join("");
+
+  const recent = finished.map((f, i) => ({ f, i, t: finishedTs(f) }))
+    .sort((a, b) => ((b.t || 0) - (a.t || 0)) || (b.i - a.i));
+  const emptied = recent.slice(0, 8).map(({ f, t }) => {
+    const again = f.repurchases > 0;
+    return '<li class="sp-item"><span>'+
+      (f.brand ? '<span class="sp-brand">'+escapeHtml(f.brand)+'</span>' : '')+
+      '<span class="sp-name">'+escapeHtml(f.name)+'</span></span>'+
+      '<span class="sp-side"><span class="sp-verdict'+(again ? ' again' : '')+'">'+(again ? "Bought again &times;"+f.repurchases : "Finished")+'</span>'+
+      (t ? '<span class="sp-date">'+spreadDate(t)+'</span>' : '')+'</span></li>';
+  }).join("");
+  const earlier = recent.length - 8;
+
+  const top = finished.filter(f => f.repurchases > 0).sort((a, b) => b.repurchases - a.repurchases).slice(0, 3)
+    .map((f, i) => '<li><span class="n">'+(i+1)+'</span><span class="t">'+
+      (f.brand ? '<small>'+escapeHtml(f.brand)+'</small>' : '')+escapeHtml(f.name)+'</span>'+
+      '<span class="c">'+f.repurchases+'x</span></li>').join("");
+
+  return '<div class="spread">'+
+    '<header class="sp-mast"><div class="sp-dateline"><span>Layer / The Shelf</span><span><span class="sp-loc">On your device &middot; </span>'+month+'</span></div>'+
+      '<h2 class="sp-title">The <em>Shelf</em></h2></header>'+
+    '<div class="sp-stats">'+stat(myShelf.length, "In rotation")+stat(finished.length, "Emptied")+stat(boughtAgain, "Bought again")+'</div>'+
+    '<div class="sp-body"><div class="sp-main">'+
+      '<section>'+heading("I.", "In rotation")+
+        (rotation ? '<ol class="sp-list">'+rotation+'</ol>'
+                  : '<div class="sp-void"><span class="sp-void-rule"></span><h3>An empty shelf</h3><p>Add what you own, and your first issue writes itself.</p></div>')+'</section>'+
+      '<section>'+heading("II.", "Lately emptied")+
+        (emptied ? '<ol class="sp-list">'+emptied+'</ol>'+(earlier > 0 ? '<p class="sp-hint">And '+earlier+' earlier.</p>' : '')
+                 : '<p class="sp-empty">Nothing finished yet.</p>')+'</section>'+
+    '</div><aside class="sp-rail">'+
+      '<section><h3>Most returned to</h3>'+
+        (top ? '<ol class="sp-top">'+top+'</ol>' : '<p class="sp-empty">Nothing rebought yet.</p>')+'</section>'+
+      '<section><h3>A note</h3>'+
+        '<textarea id="shelfnote" class="sp-note" maxlength="2000" placeholder="A line or two about your shelf...">'+escapeHtml(shelfNote)+'</textarea>'+
+        '<p class="sp-hint">Saved on this device as you type.</p></section>'+
+    '</aside></div></div>';
+}
+
 function render(){
   persist();
   renderPicker();
@@ -1022,12 +1154,15 @@ function render(){
     '<button data-v="daily" data-on="'+(view==="daily")+'">Daily</button>'+
     '<button data-v="weekly" data-on="'+(view==="weekly")+'">Weekly plan</button>'+
     '<button data-v="journal" data-on="'+(view==="journal")+'">Journal</button>'+
-    '<button data-v="myshelf" data-on="'+(view==="myshelf")+'">My Shelf</button></div>';
+    '<button data-v="myshelf" data-on="'+(view==="myshelf")+'">My Shelf</button>'+
+    '<button data-v="spread" data-on="'+(view==="spread")+'">Shelf Spread</button></div>';
 
   if(view === "journal"){
     html += renderJournal();
   } else if(view === "myshelf"){
     html += renderMyShelf();
+  } else if(view === "spread"){
+    html += renderSpread();
   } else if(sel.size === 0){
     html += '<div class="empty"><div class="dot"></div><h3>Your shelf is empty</h3>'+
       '<p>Pick a few products on the left and your routine builds itself.</p></div>';
@@ -1090,6 +1225,15 @@ function render(){
     r.querySelectorAll(".msdelfin").forEach(b => b.onclick = () => deleteFinishedItem(b.dataset.id));
     r.querySelectorAll(".rpplus").forEach(b => b.onclick = () => bumpRepurchase(b.dataset.id, 1));
     r.querySelectorAll(".rpminus").forEach(b => b.onclick = () => bumpRepurchase(b.dataset.id, -1));
+  }
+
+  if(view === "spread"){
+    const noteEl = document.getElementById("shelfnote");
+    if(noteEl){
+      let noteTimer;
+      noteEl.oninput = (e) => { shelfNote = e.target.value; clearTimeout(noteTimer); noteTimer = setTimeout(persist, 400); };
+      noteEl.onchange = () => { clearTimeout(noteTimer); persist(); };
+    }
   }
 }
 
