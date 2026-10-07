@@ -344,8 +344,28 @@
     border-top:1px solid var(--ink); border-bottom:1px solid var(--rule-strong);
     font-size:10.5px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-soft); }
   @media(max-width:420px){ .sp-loc{ display:none; } .sp-dateline{ font-size:9.5px; letter-spacing:.14em; } }
+  .sp-titlerow{ display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:12px 24px; margin-top:26px; }
+  .sp-actions{ flex-shrink:0; padding-bottom:10px; }
+  .sp-save{ font-family:var(--sans); font-weight:500; font-size:12.5px; letter-spacing:.04em; color:var(--accent-ink);
+    background:transparent; border:1px solid var(--accent); border-radius:999px; padding:8px 18px; cursor:pointer;
+    transition:background .14s ease, color .14s ease; }
+  .sp-save:hover:not(:disabled){ background:var(--accent); color:var(--on-accent); }
+  .sp-save:focus-visible{ outline:2px solid var(--accent-ink); outline-offset:2px; }
+  .sp-save:disabled{ opacity:.55; cursor:progress; }
+  .sp-status{ margin:8px 0 0; font-family:var(--serif); font-style:italic; font-size:12.5px; color:var(--muted); max-width:30ch; }
+  .sp-status:empty{ display:none; }
+  /* off-screen copy used for the PNG: always the light paper look, whatever the device theme */
+  .sp-stage{ --paper:#C0C2BE; --paper-2:#CBCDC8; --ink:#221E1F; --ink-soft:#54504F; --muted:#74726D;
+    --rule:#AAACA6; --rule-strong:#8F918B; --accent:#78123A; --accent-ink:#78123A; --on-accent:#EFE1E6;
+    position:absolute; left:-10000px; top:0; background:var(--paper); color:var(--ink); font-family:var(--sans);
+    line-height:1.55; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  .sp-issue{ text-align:center; margin-bottom:30px; }
+  .sp-issue-mark{ font-family:var(--serif); font-weight:400; line-height:1; letter-spacing:.05em; padding-left:.05em; }
+  .sp-issue-tag{ margin:12px 0 0; font-family:var(--serif); font-style:italic; font-size:16px; color:var(--ink-soft); }
+  .sp-note-static{ font-family:var(--serif); font-size:16px; line-height:1.6; color:var(--ink); white-space:pre-wrap;
+    overflow-wrap:anywhere; border-left:1px solid var(--accent); padding-left:16px; }
   .sp-title{ font-family:var(--serif); font-weight:400; font-size:clamp(46px,8vw,92px); line-height:.98;
-    letter-spacing:-.028em; margin:26px 0 0; }
+    letter-spacing:-.028em; margin:0; }
   .sp-title em{ font-style:italic; font-weight:300; }
   .sp-stats{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); margin:32px 0 48px;
     border-top:1px solid var(--rule-strong); border-bottom:1px solid var(--rule-strong); }
@@ -1127,7 +1147,9 @@ function renderSpread(){
 
   return '<div class="spread">'+
     '<header class="sp-mast"><div class="sp-dateline"><span>Layer / The Shelf</span><span><span class="sp-loc">On your device &middot; </span>'+month+'</span></div>'+
-      '<h2 class="sp-title">The <em>Shelf</em></h2></header>'+
+      '<div class="sp-titlerow"><h2 class="sp-title">The <em>Shelf</em></h2>'+
+        '<div class="sp-actions"><button type="button" class="sp-save" id="sp-save">Save as image</button>'+
+        '<p class="sp-status" id="sp-status" role="status" aria-live="polite"></p></div></div></header>'+
     '<div class="sp-stats">'+stat(myShelf.length, "In rotation")+stat(finished.length, "Emptied")+stat(boughtAgain, "Bought again")+'</div>'+
     '<div class="sp-body"><div class="sp-main">'+
       '<section>'+heading("I.", "In rotation")+
@@ -1143,6 +1165,100 @@ function renderSpread(){
         '<textarea id="shelfnote" class="sp-note" maxlength="2000" placeholder="A line or two about your shelf...">'+escapeHtml(shelfNote)+'</textarea>'+
         '<p class="sp-hint">Saved on this device as you type.</p></section>'+
     '</aside></div></div>';
+}
+
+// The page's Google Fonts sheet is cross-origin, so the library cannot read it. Fetch the Latin faces ourselves and inline them.
+let spreadFontCss = null;
+async function getSpreadFontCss(){
+  if(spreadFontCss !== null) return spreadFontCss;
+  try{
+    const link = document.querySelector('link[href*="fonts.googleapis.com/css2"]');
+    const css = await (await fetch(link.href)).text();
+    const faces = [...css.matchAll(/\/\*\s*latin\s*\*\/\s*(@font-face\s*\{[^}]*\})/g)].map(m => m[1]);
+    const inlined = await Promise.all(faces.map(async face => {
+      const m = face.match(/url\((https:[^)]+)\)/);
+      if(!m) return face;
+      const blob = await (await fetch(m[1])).blob();
+      const data = await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(blob); });
+      return face.replace(m[1], data);
+    }));
+    spreadFontCss = inlined.join("\n");
+  }catch(err){
+    console.warn("Could not embed web fonts, the image will use fallback fonts.", err);
+    spreadFontCss = "";
+  }
+  return spreadFontCss;
+}
+
+// Renders an off-screen copy of the spread (masthead on, buttons off, note as plain text) to a PNG.
+async function saveSpreadImage(btn){
+  const live = document.querySelector(".spread");
+  const status = document.getElementById("sp-status");
+  if(!live) return;
+  const label = btn.textContent;
+  btn.disabled = true; btn.textContent = "Preparing...";
+  if(status) status.textContent = "";
+  let stage;
+  try{
+    const { toBlob } = await import("https://esm.sh/html-to-image@1.11.11");
+    if(document.fonts && document.fonts.ready) await document.fonts.ready;
+
+    const pad = window.innerWidth < 600 ? 28 : 48;
+    stage = document.createElement("div");
+    stage.className = "sp-stage";
+    stage.style.width = (live.offsetWidth + pad * 2) + "px";
+    stage.style.padding = pad + "px";
+
+    const issue = document.createElement("header");
+    issue.className = "sp-issue";
+    issue.innerHTML = '<div class="sp-issue-mark" style="font-size:'+Math.min(88, Math.round(live.offsetWidth * 0.22))+'px">LAYER</div>'+
+      '<p class="sp-issue-tag">A field guide to the order of things.</p>';
+
+    const clone = live.cloneNode(true);
+    clone.querySelectorAll(".sp-actions").forEach(n => n.remove());
+    const noteEl = clone.querySelector(".sp-note");
+    if(noteEl){
+      const section = noteEl.closest("section");
+      if(shelfNote.trim()){
+        const text = document.createElement("div");
+        text.className = "sp-note-static";
+        text.textContent = shelfNote;
+        noteEl.replaceWith(text);
+        section.querySelectorAll(".sp-hint").forEach(n => n.remove());
+      } else {
+        section.remove();
+      }
+    }
+    stage.append(issue, clone);
+    document.querySelector(".col-results").appendChild(stage);
+
+    const ratio = Math.min(2, Math.sqrt(12e6 / (stage.offsetWidth * stage.offsetHeight)));
+    const opts = { pixelRatio: ratio, backgroundColor: "#C0C2BE", fontEmbedCSS: await getSpreadFontCss(),
+      style: { position: "static", left: "0", top: "0" } };
+    if(/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) await toBlob(stage, opts); // first Safari pass can miss the fonts
+    const blob = await toBlob(stage, opts);
+    if(!blob) throw new Error("empty image");
+
+    const now = new Date();
+    const name = "layer-shelf-"+now.toLocaleDateString("en-US", { month:"long" }).toLowerCase()+"-"+now.getFullYear()+".png";
+    const file = new File([blob], name, { type:"image/png" });
+    if(window.matchMedia("(pointer:coarse)").matches && navigator.canShare && navigator.canShare({ files:[file] })){
+      try{ await navigator.share({ files:[file], title:"My LAYER shelf" }); return; }
+      catch(err){ if(err && err.name === "AbortError") return; }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    if(status) status.textContent = "Image saved.";
+  }catch(err){
+    console.warn("Could not create the shelf image.", err);
+    if(status) status.textContent = "Could not create the image. Check your connection and try again.";
+  }finally{
+    if(stage) stage.remove();
+    btn.disabled = false; btn.textContent = label;
+  }
 }
 
 function render(){
@@ -1234,6 +1350,8 @@ function render(){
       noteEl.oninput = (e) => { shelfNote = e.target.value; clearTimeout(noteTimer); noteTimer = setTimeout(persist, 400); };
       noteEl.onchange = () => { clearTimeout(noteTimer); persist(); };
     }
+    const saveImgBtn = document.getElementById("sp-save");
+    if(saveImgBtn) saveImgBtn.onclick = () => saveSpreadImage(saveImgBtn);
   }
 }
 
