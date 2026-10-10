@@ -262,8 +262,19 @@
   .jchange{ font-size:12.5px; margin:10px 0 0; font-family:var(--sans); }
   .jplus{ color:var(--accent-ink); font-weight:600; }
   .jminus{ color:var(--muted); font-weight:600; margin-left:10px; }
-  .jproducts{ font-size:11.5px; color:var(--muted); margin-top:10px; }
-  .jproducts.jnone{ font-style:italic; opacity:.8; }
+  .jproducts{ font-size:13px; line-height:1.55; color:var(--ink-soft); margin-top:16px; padding-top:12px;
+    border-top:1px solid var(--rule); }
+  .jproducts::before{ content:"On the shelf"; display:block; margin-bottom:6px; font-size:10px; font-weight:600;
+    letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+  .jproducts.jnone{ font-size:11.5px; color:var(--muted); margin-top:10px; padding-top:0; border-top:0;
+    font-style:italic; opacity:.8; }
+  .jproducts.jnone::before{ content:none; }
+  @media(max-width:480px){
+    .jform{ padding:20px 16px; }
+    .jlabel{ text-align:center; }
+    .jchips{ justify-content:center; }
+    .jdateinput{ width:100%; }
+  }
 
   /* shelf */
   .myshelf-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:20px; }
@@ -415,6 +426,21 @@
     border-radius:var(--radius); padding:12px 14px; }
   .sp-note:focus{ outline:2px solid var(--accent-ink); outline-offset:1px; }
 
+  /* essay: a calm reading section below the tool */
+  .essay{ margin-top:clamp(72px,10vw,128px); padding-top:clamp(40px,6vw,64px); border-top:1px solid var(--ink); }
+  .essay-title{ font-family:var(--serif); font-weight:400; font-size:clamp(36px,5.4vw,60px); line-height:1.04;
+    letter-spacing:-.025em; margin:0 0 22px; max-width:18ch; }
+  .essay-deck{ font-family:var(--serif); font-style:italic; font-weight:300; font-size:clamp(18px,2.1vw,22px);
+    line-height:1.5; color:var(--ink-soft); max-width:46ch; margin:0 0 44px; }
+  .essay-col{ max-width:62ch; font-family:var(--serif); font-size:clamp(17px,1.8vw,19px); }
+  .essay-body{ line-height:1.75; color:var(--ink); }
+  .essay-body p{ margin:0 0 1.5em; text-wrap:pretty; }
+  .essay-body p:last-child{ margin-bottom:0; }
+  .essay-body p:first-child::first-letter{ float:left; font-weight:500; font-size:4.3em; line-height:.8;
+    padding:.07em .1em 0 0; color:var(--accent-ink); }
+  .essay-source{ margin:44px 0 0; padding-top:14px; border-top:1px solid var(--rule-strong);
+    font-family:var(--sans); font-size:10.5px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+
   /* departments / section headings that follow the active view */
   body:has(#results .toggle button[data-v="daily"][data-on="true"]) .section-head.sec-view[data-for="daily"]{ display:flex; }
   body:has(#results .toggle button[data-v="weekly"][data-on="true"]) .section-head.sec-view[data-for="weekly"]{ display:flex; }
@@ -462,6 +488,21 @@
       <div id="results"></div>
     </div>
   </div>
+
+  <section class="essay" aria-labelledby="essay-title">
+    <p class="eyebrow">Field Notes</p>
+    <h2 id="essay-title" class="essay-title">A way of paying attention</h2>
+    <p class="essay-deck">Notes on my shelf, and on a habit that changed on its way from Seoul to a bathroom in Düsseldorf.</p>
+    <div class="essay-col">
+    <div class="essay-body">
+      <p>My shelf is a strange kind of portrait, because I am not in it. It is a row of objects on a ledge, bottles mostly, turned so the labels face out, and yet I keep it the way I once kept photographs of myself. In good light, arranged, meant to be seen. Somewhere along the way the shelf became a way of saying something about me without my having to appear in it.</p>
+      <p>I learned to pay attention to skin in Seoul, and there the routine was never quite the point. It was the surface of something else, a slow kind of noticing that happened to involve a lot of small steps. You sat with your face for a while. The steps were how the time got spent, not a thing to be counted so much as a thing to move through, the way you might water plants without tallying the pots.</p>
+      <p>By the time that habit reached my bathroom here, it had been translated into a number. Ten steps, people said, the way you would say ten reps. The noticing had become a count, the ritual a stack of products with an order to defend, the face a surface to be managed toward a result. What arrived in Germany was the shape of the thing with the attention drained out of it.</p>
+      <p>And so I photograph the shelf. I think this is why. When the paying attention leaves a practice, the objects are what stay behind, and I point the camera at them because they are the part I can still hold. The shelf documents a routine, but it also documents a loss, the quiet one nobody mentions, of a habit that used to be about looking and slowly became about owning. The bottles face out. They are very beautiful. They are keeping something for me that I half remember.</p>
+    </div>
+    <p class="essay-source">Field Notes No. 01</p>
+    </div>
+  </section>
 </div>
 
 <script>
