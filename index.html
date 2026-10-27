@@ -435,6 +435,7 @@
   .essay-col{ max-width:62ch; font-family:var(--serif); font-size:clamp(17px,1.8vw,19px); }
   .essay-body{ line-height:1.75; color:var(--ink); }
   .essay-body p{ margin:0 0 1.5em; text-wrap:pretty; }
+  @media(min-width:640px){ .essay-body p{ text-align:justify; hyphens:auto; } }
   .essay-body p:last-child{ margin-bottom:0; }
   .essay-body p:first-child::first-letter{ float:left; font-weight:500; font-size:4.3em; line-height:.8;
     padding:.07em .1em 0 0; color:var(--accent-ink); }
@@ -482,20 +483,6 @@
     </aside>
   </section>
 
-  <div class="grid">
-    <div class="col col-picker">
-      <div class="section-head"><span class="sec-no">I.</span><h2>Read my shelf</h2><span class="sec-rule"></span></div>
-      <div class="picker" id="picker"></div>
-    </div>
-    <div class="col col-results">
-      <div class="section-head sec-view" data-for="daily"><span class="sec-no">II.</span><h2>The daily routine</h2><span class="sec-rule"></span></div>
-      <div class="section-head sec-view" data-for="weekly"><span class="sec-no">III.</span><h2>The weekly plan</h2><span class="sec-rule"></span></div>
-      <div class="section-head sec-view" data-for="journal"><span class="sec-no">IV.</span><h2>The journal</h2><span class="sec-rule"></span></div>
-      <div class="section-head sec-view" data-for="myshelf"><span class="sec-no">V.</span><h2>The shelf</h2><span class="sec-rule"></span></div>
-      <div id="results"></div>
-    </div>
-  </div>
-
   <section class="essay" aria-labelledby="essay-title">
     <p class="eyebrow">Field Notes</p>
     <h2 id="essay-title" class="essay-title">A way of paying attention</h2>
@@ -510,6 +497,20 @@
     <p class="essay-source">Field Notes No. 01</p>
     </div>
   </section>
+
+  <div class="grid">
+    <div class="col col-picker">
+      <div class="section-head"><span class="sec-no">I.</span><h2>Read my shelf</h2><span class="sec-rule"></span></div>
+      <div class="picker" id="picker"></div>
+    </div>
+    <div class="col col-results">
+      <div class="section-head sec-view" data-for="daily"><span class="sec-no">II.</span><h2>The daily routine</h2><span class="sec-rule"></span></div>
+      <div class="section-head sec-view" data-for="weekly"><span class="sec-no">III.</span><h2>The weekly plan</h2><span class="sec-rule"></span></div>
+      <div class="section-head sec-view" data-for="journal"><span class="sec-no">IV.</span><h2>The journal</h2><span class="sec-rule"></span></div>
+      <div class="section-head sec-view" data-for="myshelf"><span class="sec-no">V.</span><h2>The shelf</h2><span class="sec-rule"></span></div>
+      <div id="results"></div>
+    </div>
+  </div>
 </div>
 
 <script>
